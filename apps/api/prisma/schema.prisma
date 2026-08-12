@@ -1,0 +1,157 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  runtime      = "nodejs"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MembershipRole {
+  MEMBER
+  MODERATOR
+  OWNER
+}
+
+enum PostType {
+  TEXT
+  LINK
+}
+
+model User {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  username     String   @unique @db.VarChar(20)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  posts         Post[]
+  memberships   Membership[]
+  comments      Comment[]
+  postVotes     PostVote[]
+  commentVotes  CommentVote[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Subreddit {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  name        String   @unique @db.VarChar(21)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  posts       Post[]
+  memberships Membership[]
+
+  @@map("subreddits")
+}
+
+model Membership {
+  userId      String         @map("user_id") @db.Uuid
+  subredditId String         @map("subreddit_id") @db.Uuid
+  role        MembershipRole @default(MEMBER)
+  joinedAt    DateTime       @default(now()) @map("joined_at") @db.Timestamptz(3)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subreddit Subreddit @relation(fields: [subredditId], references: [id], onDelete: Cascade)
+
+  @@id([userId, subredditId])
+  @@index([subredditId])
+  @@map("memberships")
+}
+
+model Post {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  type         PostType  @default(TEXT)
+  title        String    @db.VarChar(300)
+  body         String?   @db.Text
+  url          String?   @db.Text
+  score        Int       @default(0)
+  commentCount Int       @default(0) @map("comment_count")
+  authorId     String?   @map("author_id") @db.Uuid
+  subredditId  String    @map("subreddit_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  author    User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  subreddit Subreddit  @relation(fields: [subredditId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  votes     PostVote[]
+
+  @@index([subredditId, createdAt(sort: Desc)])
+  @@map("posts")
+}
+
+model Comment {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  body      String    @db.Text
+  path      String    @db.Text
+  depth     Int       @default(0)
+  score     Int       @default(0)
+  postId    String    @map("post_id") @db.Uuid
+  parentId  String?   @map("parent_id") @db.Uuid
+  authorId  String?   @map("author_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  replies Comment[]     @relation("CommentReplies")
+  votes   CommentVote[]
+
+  @@index([postId, path])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model PostVote {
+  userId    String   @map("user_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  value     Int      @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("post_votes")
+}
+
+model CommentVote {
+  userId    String   @map("user_id") @db.Uuid
+  commentId String   @map("comment_id") @db.Uuid
+  value     Int      @db.SmallInt
+  reatedAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, commentId])
+  @@index([commentId])
+  @@map("comment_votes")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
