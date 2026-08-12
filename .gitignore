@@ -6,5 +6,6 @@ dist/
 generated/
 
 .claude
-.agents/
-.windsurf/
+/Users/macbookair/WebstormProjects/reddit/apps/api/.agents
+/Users/macbookair/WebstormProjects/reddit/apps/api/.windsurf
+/Users/macbookair/WebstormProjects/reddit/apps/api/.claude
