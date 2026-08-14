@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, IsUrl, MaxLength, MinLength, ValidateIf } from 'class-validator';
+import { IsIn, IsString, IsUrl, MaxLength, MinLength, ValidateIf } from 'class-validator';
 
 export class CreatePostDto {
   @IsIn(['TEXT', 'LINK'])
@@ -18,7 +18,8 @@ export class CreatePostDto {
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   url?: string;
 
-  @IsOptional()
   @IsString()
+  @MinLength(3)
+  @MaxLength(21)
   subreddit!: string;
 }

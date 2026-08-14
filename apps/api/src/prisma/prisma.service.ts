@@ -9,7 +9,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
         const adapter = new PrismaPg({
             connectionString: config.getOrThrow<string>('DATABASE_URL')
         })
-        super({ adapter })
+        super({ 
+            adapter,
+            log: config.get('NODE_ENV') === 'development' ? ['query'] : []
+        })
     }
 
     async onModuleInit() {

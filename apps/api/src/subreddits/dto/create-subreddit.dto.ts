@@ -12,5 +12,5 @@ export class CreateSubredditDto {
     @IsOptional()
     @IsString()
     @MaxLength(500)
-    description!: string
+    description?: string
 }

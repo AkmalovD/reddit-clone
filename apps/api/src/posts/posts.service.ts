@@ -12,7 +12,7 @@ const POST_LIST_FIELDS = {
     commentCount: true,
     createdAt: true,
     author: { select: { id: true, username: true } },
-    subbreddit: { select: { name: true } }
+    subreddit: { select: { name: true } }
 } as const
 
 @Injectable()
@@ -32,7 +32,7 @@ export class PostsService {
                 type: dto.type,
                 title: dto.title,
                 body: dto.type === 'TEXT' ? dto.body : null,
-                url: dto.url === 'LINK' ? dto.url : null,
+                url: dto.type === 'LINK' ? dto.url : null,
                 authorId: userId,
                 subredditId: subreddit.id  
             },
