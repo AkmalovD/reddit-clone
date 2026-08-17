@@ -4,8 +4,8 @@ export type CommentRow = {
     depth: number
     score: number
     parentId: string | null
-    createAt: Date
-    updatedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
     deletedAt: Date | null
     author: { id: string, username: string } | null
 }

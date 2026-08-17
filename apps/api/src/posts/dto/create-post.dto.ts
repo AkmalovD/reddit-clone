@@ -9,12 +9,12 @@ export class CreatePostDto {
   @MaxLength(300)
   title!: string;
 
-  @ValidateIf((o) => o.type === 'TEXT')
+  @ValidateIf((o: CreatePostDto) => o.type === 'TEXT')
   @IsString()
   @MaxLength(40000)
   body?: string;
 
-  @ValidateIf((o) => o.type === 'LINK')
+  @ValidateIf((o: CreatePostDto) => o.type === 'LINK')
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   url?: string;
 

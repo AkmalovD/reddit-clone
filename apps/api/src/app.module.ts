@@ -5,6 +5,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from './auth/auth.module';
 import { SubredditsModule } from "./subreddits/subreddits.module";
 import { PostsModule } from "./posts/posts.module";
+import { CommentsModule } from "./comments/comments.module";
 
 
 @Module({
@@ -16,7 +17,8 @@ import { PostsModule } from "./posts/posts.module";
     PrismaModule,
     AuthModule,
     SubredditsModule,
-    PostsModule
+    PostsModule,
+    CommentsModule
   ]
 })
 
