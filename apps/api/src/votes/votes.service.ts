@@ -1,0 +1,126 @@
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { Prisma } from "../../generated/prisma/client";
+
+@Injectable()
+export class VotesService {
+    constructor(private readonly prisma: PrismaService) { }
+
+    async votePost(postId: string, userId: string, value: -1 | 0 | 1) {
+        try {
+            return await this.prisma.$transaction(async (tx) => {
+                const post = await tx.post.findFirst({
+                    where: { id: postId, deletedAt: null },
+                    select: { id: true }
+                })
+
+                if (!post) throw new NotFoundException('post not found')
+
+                const existing = await tx.postVote.findUnique({
+                    where: { userId_postId: { userId, postId } },
+                    select: { value: true }
+                })
+
+                const previous = existing?.value ?? 0
+                const delta = value - previous
+
+                if (delta === 0) {
+                    const current = await tx.post.findUniqueOrThrow({
+                        where: { id: postId },
+                        select: { score: true }
+                    })
+
+                    return { value: previous, score: current.score }
+                }
+
+                if (value === 0) {
+                    await tx.postVote.delete({
+                        where: { userId_postId: { userId, postId } },
+                    });
+                } else if (existing) {
+                    await tx.postVote.update({
+                        where: { userId_postId: { userId, postId } },
+                        data: { value },
+                    });
+                } else {
+                    await tx.postVote.create({ data: { userId, postId, value } });
+                }
+
+                const updated = await tx.post.update({
+                    where: { id: postId },
+                    data: { score: { increment: delta } },
+                    select: { score: true }
+                })
+
+                return { value, score: updated.score }
+            })
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2002'
+            ) {
+                throw new ConflictException('concurrent vote, retry')
+            }
+            throw error
+        }
+    }
+
+    async voteComment(commentId: string, userId: string, value: -1 | 0 | 1) {
+        try {
+            return await this.prisma.$transaction(async (tx) => {
+                const comment = await tx.comment.findFirst({
+                    where: { id: commentId, deletedAt: null },
+                    select: { id: true }
+                })
+
+                if (!comment) throw new NotFoundException('comment not found')
+
+                const existing = await tx.commentVote.findUnique({
+                    where: { userId_commentId: { userId, commentId } },
+                    select: { value: true }
+                })
+
+                const previous = existing?.value ?? 0
+                const delta = value - previous
+
+                if (delta === 0) {
+                    const current = await tx.comment.findUniqueOrThrow({
+                        where: { id: commentId },
+                        select: { score: true }
+                    })
+
+                    return { value: previous, score: current.score }
+                }
+
+                if (value === 0) {
+                    await tx.commentVote.delete({
+                        where: { userId_commentId: { userId, commentId } },
+                    });
+                } else if (existing) {
+                    await tx.commentVote.update({
+                        where: { userId_commentId: { userId, commentId } },
+                        data: { value },
+                    });
+                } else {
+                    await tx.commentVote.create({ data: { userId, commentId, value } });
+                }
+
+                const updated = await tx.comment.update({
+                    where: { id: commentId },
+                    data: { score: { increment: delta } },
+                    select: { score: true }
+                })
+
+                return { value, score: updated.score }
+            })
+        } catch (error) {
+            if (
+                error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2002'
+            ) {
+                throw new ConflictException('concurrent vote, retry');
+            }
+            throw error
+        }
+    }
+}
