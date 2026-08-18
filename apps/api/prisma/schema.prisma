@@ -78,28 +78,34 @@ model Post {
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
+  upvotes      Int       @default(0)
+  downvotes    Int       @default(0)
+  hotRank      Float     @default(0) @map("hot_rank")
 
   author    User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
   subreddit Subreddit  @relation(fields: [subredditId], references: [id], onDelete: Cascade)
   comments  Comment[]
   votes     PostVote[]
 
-  @@index([subredditId, createdAt(sort: Desc)])
+  @@index([subredditId, hotRank(sort: Desc), id(sort: Desc), createdAt(sort: Desc)])
   @@map("posts")
 }
 
 model Comment {
-  id        String    @id @default(uuid(7)) @db.Uuid
-  body      String    @db.Text
-  path      String    @db.Text
-  depth     Int       @default(0)
-  score     Int       @default(0)
-  postId    String    @map("post_id") @db.Uuid
-  parentId  String?   @map("parent_id") @db.Uuid
-  authorId  String?   @map("author_id") @db.Uuid
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(3)
+  id         String    @id @default(uuid(7)) @db.Uuid
+  body       String    @db.Text
+  path       String    @db.Text
+  depth      Int       @default(0)
+  score      Int       @default(0)
+  postId     String    @map("post_id") @db.Uuid
+  parentId   String?   @map("parent_id") @db.Uuid
+  authorId   String?   @map("author_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+  upvotes    Int       @default(0)
+  downvotes  Int       @default(0)
+  confidence Float     @default(0)
 
   post    Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
   author  User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
