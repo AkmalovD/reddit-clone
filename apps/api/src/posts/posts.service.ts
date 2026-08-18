@@ -16,6 +16,13 @@ const POST_LIST_FIELDS = {
     subreddit: { select: { name: true } }
 } satisfies Prisma.PostSelect
 
+// три сортировки — три индекса, ни одной сортировки в памяти
+const ORDER_BY = {
+    hot: [{ hotRank: 'desc' }, { id: 'desc' }],
+    new: [{ createdAt: 'desc' }, { id: 'desc' }],
+    top: [{ score: 'desc' }, { id: 'desc' }]
+} satisfies Record<string, Prisma.PostOrderByWithRelationInput[]>
+
 @Injectable()
 export class PostsService {
     constructor(private readonly prisma: PrismaService) {}
@@ -53,7 +60,7 @@ export class PostsService {
 
         const rows = await this.prisma.post.findMany({
             where: { subredditId: subreddit.id, deletedAt: null },
-            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            orderBy: ORDER_BY[query.sort ?? 'hot'],
             take: limit + 1,
             ...(query.cursor && {
                 cursor: { id: query.cursor },

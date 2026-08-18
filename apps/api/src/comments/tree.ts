@@ -7,6 +7,7 @@ export type CommentRow = {
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
+    confidence: number
     author: { id: string, username: string } | null
 }
 
@@ -36,6 +37,14 @@ export function buildTree(rows: CommentRow[]): CommentNode[] {
             roots.push(node)
         }
     }
+
+    // структурный порядок дал path; порядок показа накладываем поверх, в памяти
+    const sortSiblings = (nodes: CommentNode[]) => {
+        nodes.sort((a, b) => b.confidence - a.confidence)
+        for (const node of nodes) sortSiblings(node.replies)
+    }
+
+    sortSiblings(roots)
 
     return roots
 }

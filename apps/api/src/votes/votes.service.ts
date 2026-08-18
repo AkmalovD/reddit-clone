@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "../../generated/prisma/client";
+import { hotRank, wilsonScore } from "../common/ranking";
 
 @Injectable()
 export class VotesService {
@@ -46,13 +47,27 @@ export class VotesService {
                     await tx.postVote.create({ data: { userId, postId, value } });
                 }
 
+                const upDelta = (value === 1 ? 1 : 0) - (previous === 1 ? 1 : 0);
+                const downDelta = (value === -1 ? 1 : 0) - (previous === -1 ? 1 : 0);
+
                 const updated = await tx.post.update({
                     where: { id: postId },
-                    data: { score: { increment: delta } },
-                    select: { score: true }
-                })
+                    data: {
+                        score: { increment: delta },
+                        upvotes: { increment: upDelta },
+                        downvotes: { increment: downDelta },
+                    },
+                    select: { score: true, createdAt: true },
+                });
 
-                return { value, score: updated.score }
+                // hot зависит только от score и created_at — пересчитываем здесь же
+                await tx.post.update({
+                    where: { id: postId },
+                    data: { hotRank: hotRank(updated.score, updated.createdAt) },
+                });
+
+                return { value, score: updated.score };
+
             })
         } catch (error) {
             if (
@@ -105,10 +120,23 @@ export class VotesService {
                     await tx.commentVote.create({ data: { userId, commentId, value } });
                 }
 
+                const upDelta = (value === 1 ? 1 : 0) - (previous === 1 ? 1 : 0)
+                const downDelta = (value === -1 ? 1 : 0) - (previous === -1 ? 1 : 0)
+
                 const updated = await tx.comment.update({
                     where: { id: commentId },
-                    data: { score: { increment: delta } },
-                    select: { score: true }
+                    data: {
+                        score: { increment: delta },
+                        upvotes: { increment: upDelta },
+                        downvotes: { increment: downDelta }
+                    },
+                    select: { score: true, upvotes: true, downvotes: true }
+                })
+
+                // границу Уилсона считаем из свежих счётчиков, уже под блокировкой строки
+                await tx.comment.update({
+                    where: { id: commentId },
+                    data: { confidence: wilsonScore(updated.upvotes, updated.downvotes) }
                 })
 
                 return { value, score: updated.score }

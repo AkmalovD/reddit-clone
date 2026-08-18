@@ -15,6 +15,7 @@ const COMMENT_FIELDS = {
     createdAt: true,
     updatedAt: true,
     deletedAt: true,
+    confidence: true,
     author: { select: { id: true, username: true } }
 } satisfies Prisma.CommentSelect
 

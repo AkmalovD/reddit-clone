@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class ListPostsDto {
   @IsOptional()
@@ -12,4 +12,8 @@ export class ListPostsDto {
   @Min(1)
   @Max(100)
   limit?: number = 25;
+
+  @IsOptional()
+  @IsIn(['hot', 'new', 'top'])
+  sort?: 'hot' | 'new' | 'top' = 'hot';
 }
