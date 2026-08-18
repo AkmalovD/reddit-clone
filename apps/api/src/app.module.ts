@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { SubredditsModule } from "./subreddits/subreddits.module";
 import { PostsModule } from "./posts/posts.module";
 import { CommentsModule } from "./comments/comments.module";
+import { VotesModule } from "./votes/votes.module";
 
 
 @Module({
@@ -18,7 +19,8 @@ import { CommentsModule } from "./comments/comments.module";
     AuthModule,
     SubredditsModule,
     PostsModule,
-    CommentsModule
+    CommentsModule,
+    VotesModule
   ]
 })
 
