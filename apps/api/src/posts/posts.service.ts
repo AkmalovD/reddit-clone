@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { Prisma } from "../../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreatePostDto } from "./dto/create-post.dto";
 import { ListPostsDto } from "./dto/lists-post.dto";
@@ -13,7 +14,7 @@ const POST_LIST_FIELDS = {
     createdAt: true,
     author: { select: { id: true, username: true } },
     subreddit: { select: { name: true } }
-} as const
+} satisfies Prisma.PostSelect
 
 @Injectable()
 export class PostsService {
@@ -34,13 +35,13 @@ export class PostsService {
                 body: dto.type === 'TEXT' ? dto.body : null,
                 url: dto.type === 'LINK' ? dto.url : null,
                 authorId: userId,
-                subredditId: subreddit.id  
+                subredditId: subreddit.id
             },
             select: POST_LIST_FIELDS
         })
     }
 
-    async listBySubreddit(name: string, query: ListPostsDto) {
+    async listBySubreddit(name: string, query: ListPostsDto, userId?: string) {
         const limit = query.limit ?? 25
 
         const subreddit = await this.prisma.subreddit.findUnique({
@@ -59,25 +60,49 @@ export class PostsService {
                 skip: 1
             }),
             select: POST_LIST_FIELDS
-        }) 
+        })
 
         const hasMore = rows.length > limit
         const items = hasMore ? rows.slice(0, limit) : rows
+        const nextCursor = hasMore ? items[items.length - 1].id : null
+
+        // аноним или пустая страница — голосов не ищем
+        if (!userId || items.length === 0) {
+            return {
+                items: items.map((p) => ({ ...p, userVote: 0 })),
+                nextCursor
+            }
+        }
+
+        // один запрос на всю страницу вместо одного на каждый пост
+        const votes = await this.prisma.postVote.findMany({
+            where: { userId, postId: { in: items.map((p) => p.id) } },
+            select: { postId: true, value: true }
+        })
+
+        const byPost = new Map(votes.map((v) => [v.postId, v.value]))
 
         return {
-            items,
-            nextCursor: hasMore ? items[items.length - 1].id : null
+            items: items.map((p) => ({ ...p, userVote: byPost.get(p.id) ?? 0 })),
+            nextCursor
         }
     }
 
-    async findOne(id: string) {
+    async findOne(id: string, userId?: string) {
         const post = await this.prisma.post.findFirst({
             where: { id, deletedAt: null },
             select: { ...POST_LIST_FIELDS, body: true }
         })
 
         if (!post) throw new NotFoundException('post not found')
-        
-        return post
+
+        if (!userId) return { ...post, userVote: 0 }
+
+        const vote = await this.prisma.postVote.findUnique({
+            where: { userId_postId: { userId, postId: id } },
+            select: { value: true }
+        })
+
+        return { ...post, userVote: vote?.value ?? 0 }
     }
 }
