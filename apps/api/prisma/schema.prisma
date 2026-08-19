@@ -151,7 +151,7 @@ model CommentVote {
 }
 
 model RefreshToken {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(uuid(7)) @db.Uuid
   tokenHash String    @unique @map("token_hash")
   userId    String    @map("user_id") @db.Uuid
   expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)

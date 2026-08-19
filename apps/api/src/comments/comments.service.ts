@@ -41,7 +41,7 @@ export class CommentsService {
                     select: { path: true, depth: true }
                 })
 
-                if (!parent) throw new NotFoundException('parrent comment not found')
+                if (!parent) throw new NotFoundException('parent comment not found')
 
                 depth = parent.depth + 1
                 if (depth > MAX_DEPTH) {
@@ -97,8 +97,8 @@ export class CommentsService {
     }
 
     async subTree(commentId: string) {
-        const root = await this.prisma.comment.findUnique({
-            where: { id: commentId },
+        const root = await this.prisma.comment.findFirst({
+            where: { id: commentId, deletedAt: null },
             select: { path: true, postId: true }
         })
 

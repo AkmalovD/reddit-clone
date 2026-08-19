@@ -1,4 +1,5 @@
 import { Controller, Post, Get, UseGuards, Body, Param, Query } from "@nestjs/common";
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { PostsService } from "./posts.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
@@ -6,19 +7,36 @@ import { CreatePostDto } from "./dto/create-post.dto";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import type { AuthUser } from "../auth/decorators/current-user.decorator";
 import { ListPostsDto } from "./dto/lists-post.dto";
+import { ApiOptionalBearerAuth } from "../common/decorators/api-optional-bearer.decorator";
 
+@ApiTags('posts')
 @Controller()
 export class PostsController {
     constructor(private readonly posts: PostsService) {}
 
     @Post('posts')
     @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Создать пост' })
+    @ApiResponse({ status: 201, description: 'Пост создан' })
+    @ApiResponse({ status: 400, description: 'TEXT без body или LINK без валидного url' })
+    @ApiResponse({ status: 404, description: 'Сообщество не найдено' })
     create(@Body() dto: CreatePostDto, @CurrentUser() user: AuthUser) {
         return this.posts.create(dto, user.id)
     }
 
     @Get('subreddits/:name/posts')
     @UseGuards(OptionalJwtAuthGuard)
+    @ApiOptionalBearerAuth()
+    @ApiParam({ name: 'name', example: 'programming' })
+    @ApiOperation({
+        summary: 'Лента сообщества',
+        description:
+            'Курсорная пагинация: передайте nextCursor из предыдущего ответа. ' +
+            'Токен необязателен — с ним каждый пост получает поле userVote с вашим голосом.'
+    })
+    @ApiResponse({ status: 200, description: '{ items, nextCursor }' })
+    @ApiResponse({ status: 404, description: 'Сообщество не найдено' })
     list(
         @Param('name') name: string,
         @Query() query: ListPostsDto,
@@ -29,6 +47,11 @@ export class PostsController {
 
     @Get('posts/:id')
     @UseGuards(OptionalJwtAuthGuard)
+    @ApiOptionalBearerAuth()
+    @ApiParam({ name: 'id', example: '019ffedc-3676-7769-b3d3-b91a2612fc1e' })
+    @ApiOperation({ summary: 'Один пост', description: 'Отличается от ленты наличием body.' })
+    @ApiResponse({ status: 200, description: 'Найден' })
+    @ApiResponse({ status: 404, description: 'Не найден или удалён' })
     findOne(@Param('id') id: string, @CurrentUser() user: AuthUser | null) {
         return this.posts.findOne(id, user?.id)
     }

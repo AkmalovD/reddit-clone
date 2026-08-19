@@ -6,3 +6,4 @@ allowBuilds:
   prisma: true
   unrs-resolver: true
   sharp: true
+  "@scarf/scarf": false
