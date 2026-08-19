@@ -41,5 +41,25 @@ services:
       timeout: 3s
       retries: 10
 
+  redis:
+    image: redis:8-alpine
+    container_name: reddit_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    # это кеш: терять данные допустимо, поэтому запись на диск выключена
+    # maxmemory + LRU обязательны, иначе при заполнении Redis начнёт отвечать ошибками
+    command: >
+      redis-server
+      --save ""
+      --appendonly no
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
 volumes:
   postgres_data:

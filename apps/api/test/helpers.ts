@@ -4,10 +4,12 @@ import request from 'supertest'
 import { AppModule } from "../src/app.module";
 import { configureApp } from "../src/app.setup";
 import { PrismaService } from "../src/prisma/prisma.service";
+import { RedisService } from "../src/redis/redis.service";
 
 export type TestContext = {
     app: INestApplication
     prisma: PrismaService
+    redis: RedisService
 }
 
 export async function createTestApp(): Promise<TestContext> {
@@ -18,7 +20,25 @@ export async function createTestApp(): Promise<TestContext> {
     const app = configureApp(moduleRef.createNestApplication())
     await app.init()
 
-    return { app, prisma: app.get(PrismaService) }
+    return {
+        app,
+        prisma: app.get(PrismaService),
+        redis: app.get(RedisService)
+    }
+}
+
+/**
+ * Полный сброс состояния между тестами.
+ *
+ * Чистить только Postgres мало: закешированная страница переживёт TRUNCATE
+ * и утечёт в следующий тест. Всё внешнее состояние сбрасывается в одном месте.
+ */
+export async function resetState(app: INestApplication) {
+    const prisma = app.get(PrismaService)
+    const redis = app.get(RedisService)
+
+    await truncateAll(prisma)
+    await redis.flushdb()
 }
 
 /** Список таблиц берём из каталога — новая модель подхватится сама. */

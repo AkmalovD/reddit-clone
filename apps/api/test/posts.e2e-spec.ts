@@ -1,15 +1,13 @@
 import { INestApplication } from "@nestjs/common";
 import request from 'supertest'
-import { PrismaService } from "../src/prisma/prisma.service";
-import { createTestApp, registerAndLogin, truncateAll } from "./helpers";
+import { createTestApp, registerAndLogin, resetState } from "./helpers";
 
 describe('Posts (e2e)', () => {
     let app: INestApplication
-    let prisma: PrismaService
     let token: string
 
     beforeAll(async () => {
-        ({ app, prisma } = await createTestApp())
+        ({ app } = await createTestApp())
     })
 
     afterAll(async () => {
@@ -17,7 +15,7 @@ describe('Posts (e2e)', () => {
     })
 
     beforeEach(async () => {
-        await truncateAll(prisma)
+        await resetState(app)
         token = (await registerAndLogin(app)).token
 
         await request(app.getHttpServer())

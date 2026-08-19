@@ -1,7 +1,7 @@
 import { INestApplication } from "@nestjs/common";
 import request from 'supertest'
 import { PrismaService } from "../src/prisma/prisma.service";
-import { createTestApp, registerAndLogin, truncateAll } from "./helpers";
+import { createTestApp, registerAndLogin, resetState } from "./helpers";
 
 describe('Comments (e2e)', () => {
     let app: INestApplication
@@ -18,7 +18,7 @@ describe('Comments (e2e)', () => {
     })
 
     beforeEach(async () => {
-        await truncateAll(prisma)
+        await resetState(app)
         token = (await registerAndLogin(app)).token
 
         await request(app.getHttpServer())

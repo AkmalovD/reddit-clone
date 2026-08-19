@@ -1,11 +1,9 @@
 import { INestApplication } from "@nestjs/common";
 import request from 'supertest'
-import { PrismaService } from "../src/prisma/prisma.service";
-import { createTestApp, truncateAll } from "./helpers";
+import { createTestApp, resetState } from "./helpers";
 
 describe('Auth (e2e)', () => {
     let app: INestApplication
-    let prisma: PrismaService
 
     const user = {
         username: 'alice',
@@ -22,7 +20,7 @@ describe('Auth (e2e)', () => {
             .send({ username: user.username, password: user.password })
 
     beforeAll(async () => {
-        ({ app, prisma } = await createTestApp())
+        ({ app } = await createTestApp())
     })
 
     afterAll(async () => {
@@ -30,7 +28,7 @@ describe('Auth (e2e)', () => {
     })
 
     beforeEach(async () => {
-        await truncateAll(prisma)
+        await resetState(app)
     })
 
     it('регистрирует пользователя и не отдаёт хеш пароля', async () => {
