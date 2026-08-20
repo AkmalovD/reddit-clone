@@ -1,16 +1,23 @@
 import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { configureApp } from "./app.setup";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
   configureApp(app)
   app.enableShutdownHooks()
 
   const config = app.get(ConfigService)
+
+  // Сколько прокси стоит перед приложением. За обратным прокси реальный адрес
+  // клиента приходит в X-Forwarded-For, но доверять заголовку можно ровно
+  // настолько, насколько прокси действительно есть: при значении больше
+  // фактического клиент подделает заголовок и обойдёт rate limit.
+  app.set('trust proxy', config.getOrThrow<number>('TRUST_PROXY'))
 
   // документацию поднимаем только вне продакшена
   if (config.get('NODE_ENV') !== 'production') {

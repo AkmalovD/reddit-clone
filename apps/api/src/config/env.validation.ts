@@ -7,6 +7,8 @@ export const envSchema = z.object({
     PORT: z.coerce.number().int().positive().default(3000),
     DATABASE_URL: z.string().min(1),
     REDIS_URL: z.string().min(1),
+    // число прокси перед приложением; 0 = прямые подключения
+    TRUST_PROXY: z.coerce.number().int().min(0).default(0),
     JWT_ACCESS_SECRET: z.string().min(32),
     JWT_REFRESH_SECRET: z.string().min(32),
     JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),

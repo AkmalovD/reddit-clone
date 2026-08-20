@@ -8,6 +8,8 @@ import { SubredditsModule } from "./subreddits/subreddits.module";
 import { PostsModule } from "./posts/posts.module";
 import { CommentsModule } from "./comments/comments.module";
 import { VotesModule } from "./votes/votes.module";
+import { APP_GUARD } from "@nestjs/core";
+import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 
 
 @Module({
@@ -23,7 +25,8 @@ import { VotesModule } from "./votes/votes.module";
     PostsModule,
     CommentsModule,
     VotesModule
-  ]
+  ],
+  providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }]
 })
 
 export class AppModule {}

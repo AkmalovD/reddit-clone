@@ -7,6 +7,7 @@ import { RefreshDto } from "./dto/refresh.dto";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
 import { CurrentUser } from "./decorators/current-user.decorator";
 import type { AuthUser } from "./decorators/current-user.decorator";
+import { RateLimit } from "../common/decorators/rate-limit.decorator";
 
 @ApiTags('auth')
 @Controller('auth')
@@ -15,6 +16,7 @@ export class AuthController {
 
     @Post('register')
     @HttpCode(HttpStatus.CREATED)
+    @RateLimit({ limit: 10, windowSeconds: 3600 })
     @ApiOperation({
         summary: 'Регистрация',
         description: 'Пароль хешируется Argon2id. В ответе хеша нет.'
@@ -28,6 +30,7 @@ export class AuthController {
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
+    @RateLimit({ limit: 5, windowSeconds: 60 })
     @ApiOperation({
         summary: 'Вход',
         description:
@@ -43,6 +46,7 @@ export class AuthController {
 
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
+    @RateLimit({ limit: 10, windowSeconds: 60 })
     @ApiOperation({
         summary: 'Обновление пары токенов',
         description: 'Старый refreshToken гасится. Повторное использование гасит все сессии.'

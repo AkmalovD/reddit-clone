@@ -1,0 +1,10 @@
+{
+  "typescript.tsdk": "apps/api/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/generated": true
+  }
+}
