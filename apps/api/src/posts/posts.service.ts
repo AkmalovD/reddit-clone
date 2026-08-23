@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "../../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CacheService } from "../redis/cache.service";
+import { PendingVotesService } from "../votes/pending-votes.service";
 import { CreatePostDto } from "./dto/create-post.dto";
 import { ListPostsDto } from "./dto/lists-post.dto";
 
@@ -24,6 +25,10 @@ const ORDER_BY = {
     top: [{ score: 'desc' }, { id: 'desc' }]
 } satisfies Record<string, Prisma.PostOrderByWithRelationInput[]>
 
+// Лента НЕ прибавляет отложенную дельту. Закешированная страница хранит score
+// на момент кеширования; после сброса дельта обнуляется, и сумма
+// "старый score + новая дельта" оказалась бы меньше реальной — счётчик прыгнул
+// бы назад. Поэтому лента отстаёт до TTL, но только вверх.
 const FEED_TTL_SECONDS = 30
 
 type FeedRow = Prisma.PostGetPayload<{ select: typeof POST_LIST_FIELDS }>
@@ -37,7 +42,8 @@ type FeedPage = {
 export class PostsService {
     constructor(
         private readonly prisma: PrismaService,
-        private readonly cache: CacheService
+        private readonly cache: CacheService,
+        private readonly pending: PendingVotesService
     ) {}
 
     async create(dto: CreatePostDto, userId: string) {
@@ -138,13 +144,19 @@ export class PostsService {
 
         if (!post) throw new NotFoundException('post not found')
 
-        if (!userId) return { ...post, userVote: 0 }
+        // страница поста не кешируется, поэтому здесь можно показать точное
+        // значение: база плюс ещё не сброшенная дельта из Redis.
+        // В ленте так делать нельзя — см. комментарий у FEED_TTL_SECONDS
+        const pendingScore = await this.pending.getPostDelta(id)
+        const score = post.score + pendingScore
+
+        if (!userId) return { ...post, score, userVote: 0 }
 
         const vote = await this.prisma.postVote.findUnique({
             where: { userId_postId: { userId, postId: id } },
             select: { value: true }
         })
 
-        return { ...post, userVote: vote?.value ?? 0 }
+        return { ...post, score, userVote: vote?.value ?? 0 }
     }
 }

@@ -1,74 +1,74 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Prisma } from "../../generated/prisma/client";
-import { hotRank, wilsonScore } from "../common/ranking";
+import { wilsonScore } from "../common/ranking";
+import { PendingVotesService } from "./pending-votes.service";
 
 @Injectable()
 export class VotesService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly pending: PendingVotesService
+    ) { }
 
     async votePost(postId: string, userId: string, value: -1 | 0 | 1) {
         try {
-            return await this.prisma.$transaction(async (tx) => {
-                const post = await tx.post.findFirst({
-                    where: { id: postId, deletedAt: null },
-                    select: { id: true }
-                })
-
-                if (!post) throw new NotFoundException('post not found')
-
-                const existing = await tx.postVote.findUnique({
-                    where: { userId_postId: { userId, postId } },
-                    select: { value: true }
-                })
-
-                const previous = existing?.value ?? 0
-                const delta = value - previous
-
-                if (delta === 0) {
-                    const current = await tx.post.findUniqueOrThrow({
-                        where: { id: postId },
-                        select: { score: true }
+            // Транзакция трогает только post_votes: у каждого пользователя своя
+            // строка, поэтому блокировки не пересекаются. Таблица posts не
+            // участвует вовсе — горячей строки больше нет.
+            const { previous, delta, baseScore } = await this.prisma.$transaction(
+                async (tx) => {
+                    const post = await tx.post.findFirst({
+                        where: { id: postId, deletedAt: null },
+                        select: { id: true, score: true }
                     })
 
-                    return { value: previous, score: current.score }
-                }
+                    if (!post) throw new NotFoundException('post not found')
 
-                if (value === 0) {
-                    await tx.postVote.delete({
+                    const existing = await tx.postVote.findUnique({
                         where: { userId_postId: { userId, postId } },
-                    });
-                } else if (existing) {
-                    await tx.postVote.update({
-                        where: { userId_postId: { userId, postId } },
-                        data: { value },
-                    });
-                } else {
-                    await tx.postVote.create({ data: { userId, postId, value } });
+                        select: { value: true }
+                    })
+
+                    const previous = existing?.value ?? 0
+                    const delta = value - previous
+
+                    if (delta !== 0) {
+                        if (value === 0) {
+                            await tx.postVote.delete({
+                                where: { userId_postId: { userId, postId } }
+                            })
+                        } else if (existing) {
+                            await tx.postVote.update({
+                                where: { userId_postId: { userId, postId } },
+                                data: { value }
+                            })
+                        } else {
+                            await tx.postVote.create({ data: { userId, postId, value } })
+                        }
+                    }
+
+                    return { previous, delta, baseScore: post.score }
                 }
+            )
 
-                const upDelta = (value === 1 ? 1 : 0) - (previous === 1 ? 1 : 0);
-                const downDelta = (value === -1 ? 1 : 0) - (previous === -1 ? 1 : 0);
+            if (delta === 0) {
+                const pendingScore = await this.pending.getPostDelta(postId)
+                return { value: previous, score: baseScore + pendingScore }
+            }
 
-                const updated = await tx.post.update({
-                    where: { id: postId },
-                    data: {
-                        score: { increment: delta },
-                        upvotes: { increment: upDelta },
-                        downvotes: { increment: downDelta },
-                    },
-                    select: { score: true, createdAt: true },
-                });
+            const upDelta = (value === 1 ? 1 : 0) - (previous === 1 ? 1 : 0)
+            const downDelta = (value === -1 ? 1 : 0) - (previous === -1 ? 1 : 0)
 
-                // hot зависит только от score и created_at — пересчитываем здесь же
-                await tx.post.update({
-                    where: { id: postId },
-                    data: { hotRank: hotRank(updated.score, updated.createdAt) },
-                });
+            // счётчики копятся в Redis, в Postgres их перенесёт VoteFlushService
+            const pendingScore = await this.pending.addPostDelta(
+                postId,
+                delta,
+                upDelta,
+                downDelta
+            )
 
-                return { value, score: updated.score };
-
-            })
+            return { value, score: baseScore + pendingScore }
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&

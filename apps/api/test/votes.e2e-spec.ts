@@ -2,6 +2,9 @@ import { INestApplication } from "@nestjs/common";
 import request from 'supertest'
 import { PrismaService } from "../src/prisma/prisma.service";
 import { createTestApp, registerAndLogin, resetState } from "./helpers";
+import { VoteFlushService } from "../src/votes/vote-flush.service";
+import { PENDING_SCORE } from "../src/votes/pending-votes.service";
+import { RedisService } from "../src/redis/redis.service";
 
 describe('Votes (e2e)', () => {
     let app: INestApplication
@@ -73,7 +76,7 @@ describe('Votes (e2e)', () => {
             .expect(401)
     })
 
-    it('держит upvotes/downvotes согласованными со score', async () => {
+    it('держит upvotes/downvotes согласованными со score после сброса', async () => {
         const second = await registerAndLogin(app, 'bob')
 
         await vote(1).expect(200)
@@ -82,6 +85,8 @@ describe('Votes (e2e)', () => {
             .set('Authorization', `Bearer ${second.token}`)
             .send({ value: -1 })
             .expect(200)
+
+        await app.get(VoteFlushService).flush()
 
         const post = await prisma.post.findUniqueOrThrow({
             where: { id: postId },
@@ -93,7 +98,72 @@ describe('Votes (e2e)', () => {
         expect(post.score).toBe(post.upvotes - post.downvotes)
     })
 
-    it('инвариант: score всегда равен сумме голосов', async () => {
+    it('до сброса счётчики копятся в Redis, а не в Postgres', async () => {
+        await vote(1).expect(200)
+
+        // в базе ещё ноль — таблица posts при голосовании не трогается
+        const before = await prisma.post.findUniqueOrThrow({
+            where: { id: postId },
+            select: { score: true, upvotes: true }
+        })
+        expect(before.score).toBe(0)
+        expect(before.upvotes).toBe(0)
+
+        // дельта лежит в Redis
+        const redis = app.get(RedisService)
+        expect(await redis.hget(PENDING_SCORE, postId)).toBe('1')
+
+        await app.get(VoteFlushService).flush()
+
+        const after = await prisma.post.findUniqueOrThrow({
+            where: { id: postId },
+            select: { score: true, upvotes: true }
+        })
+        expect(after.score).toBe(1)
+        expect(after.upvotes).toBe(1)
+
+        // после переноса дельта обнулена
+        expect(Number(await redis.hget(PENDING_SCORE, postId) ?? 0)).toBe(0)
+    })
+
+    it('повторный сброс не применяет дельту дважды', async () => {
+        await vote(1).expect(200)
+
+        const flusher = app.get(VoteFlushService)
+        await flusher.flush()
+        await flusher.flush()
+        await flusher.flush()
+
+        const post = await prisma.post.findUniqueOrThrow({
+            where: { id: postId },
+            select: { score: true }
+        })
+
+        expect(post.score).toBe(1)
+    })
+
+    it('ответ на голосование показывает score сразу, до сброса', async () => {
+        // клиент не должен ждать фонового переноса
+        expect((await vote(1).expect(200)).body.score).toBe(1)
+
+        const post = await prisma.post.findUniqueOrThrow({
+            where: { id: postId },
+            select: { score: true }
+        })
+        expect(post.score).toBe(0)
+    })
+
+    it('страница поста складывает базу с отложенной дельтой', async () => {
+        await vote(1).expect(200)
+
+        const res = await request(app.getHttpServer())
+            .get(`/api/posts/${postId}`)
+            .expect(200)
+
+        expect(res.body.score).toBe(1)
+    })
+
+    it('инвариант: после сброса score равен сумме голосов', async () => {
         const bob = await registerAndLogin(app, 'bob')
         const carol = await registerAndLogin(app, 'carol')
 
@@ -106,6 +176,9 @@ describe('Votes (e2e)', () => {
         }
         await vote(-1).expect(200)
 
+        // счётчик согласован в конечном счёте: сверяем после переноса
+        await app.get(VoteFlushService).flush()
+
         const [post, sum] = await Promise.all([
             prisma.post.findUniqueOrThrow({ where: { id: postId }, select: { score: true } }),
             prisma.postVote.aggregate({ where: { postId }, _sum: { value: true } })
@@ -114,13 +187,14 @@ describe('Votes (e2e)', () => {
         expect(post.score).toBe(sum._sum.value ?? 0)
     })
 
-    it('пересчитывает hotRank при голосовании', async () => {
+    it('пересчитывает hotRank при сбросе', async () => {
         const before = await prisma.post.findUniqueOrThrow({
             where: { id: postId },
             select: { hotRank: true }
         })
 
         await vote(1).expect(200)
+        await app.get(VoteFlushService).flush()
 
         const after = await prisma.post.findUniqueOrThrow({
             where: { id: postId },
