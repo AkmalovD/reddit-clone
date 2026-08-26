@@ -1,11 +1,13 @@
 export type Sort = 'hot' | 'new' | 'top'
 export type VoteValue = -1 | 0 | 1
 
+export type PostType = 'TEXT' | 'LINK'
+
 export type Author = { id: string; username: string }
 
 export type FeedPost = {
     id: string
-    type: 'TEXT' | 'LINK'
+    type: PostType
     title: string
     url: string | null
     score: number

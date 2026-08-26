@@ -1,26 +1,191 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Grove — a Reddit-shaped community site.
+
+   The palette is Reddit's own neutral system with the orange-red brand replaced
+   by green. Every foreground value below was measured against its background
+   with a WCAG contrast script; the ratio is noted so future edits can't quietly
+   break it. Flat fills only — no gradients anywhere.
+   --------------------------------------------------------------------------- */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* surfaces */
+  --background: #dae0e6;        /* page canvas, the classic Reddit blue-grey */
+  --card: #ffffff;
+  --card-foreground: #1a1a1b;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1b;
+  --foreground: #1a1a1b;        /* 17.4:1 on card */
+
+  /* neutrals */
+  --muted: #f6f7f8;             /* vote rail, inert rows, inputs */
+  --muted-foreground: #6b7073;  /* 5.01:1 — Reddit's own #787c7e fails AA at 4.21 */
+  --accent: #edeff1;            /* hover wash */
+  --accent-foreground: #1a1a1b;
+  --secondary: #f6f7f8;
+  --secondary-foreground: #1a1a1b;
+  --border: #cccccc;            /* card outline */
+  --hairline: #edeff1;          /* dividers inside a card */
+  --input: #cccccc;
+
+  /* brand */
+  --brand: #0fa65c;             /* 3.17:1 — fills and icons only (UI needs 3:1) */
+  --brand-strong: #00893f;      /* 4.52:1 — safe under white text */
+  --brand-stronger: #006f35;    /* 6.32:1 — hover, active, brand text */
+  --primary: #00893f;
+  --primary-foreground: #ffffff;
+  --ring: #00893f;
+
+  /* semantics */
+  --upvote: #0fa65c;
+  --downvote: #5b6fe0;          /* 4.38:1 */
+  --link: #0071c7;              /* 5.02:1 — Reddit's #0079d3 misses AA at 4.49 */
+  --destructive: #c1352b;       /* errors stay red; red is meaning, not brand */
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --background: #030303;
+  --card: #1a1a1b;
+  --card-foreground: #d7dadc;
+  --popover: #1a1a1b;
+  --popover-foreground: #d7dadc;
+  --foreground: #d7dadc;        /* 12.4:1 on card */
+
+  --muted: #272729;
+  --muted-foreground: #818384;  /* 4.57:1 */
+  --accent: #272729;
+  --accent-foreground: #d7dadc;
+  --secondary: #272729;
+  --secondary-foreground: #d7dadc;
+  --border: #343536;
+  --hairline: #272729;
+  --input: #343536;
+
+  --brand: #26b96d;             /* 6.83:1 on card */
+  --brand-strong: #26b96d;
+  --brand-stronger: #4ccb85;
+  --primary: #26b96d;
+  --primary-foreground: #05170d;
+  --ring: #26b96d;
+
+  --upvote: #26b96d;
+  --downvote: #8c9eff;          /* 7.00:1 */
+  --link: #4fbcff;              /* 8.26:1 */
+  --destructive: #ff6f61;
 }
 
 @theme inline {
+  /* IBM Plex Sans carries the interface, Noto Sans carries prose — Reddit's own
+     pairing. Deliberately not Geist: the scaffold default is the templated pick. */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-noto-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* product tokens */
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-stronger: var(--brand-stronger);
+  --color-upvote: var(--upvote);
+  --color-downvote: var(--downvote);
+  --color-link: var(--link);
+  --color-hairline: var(--hairline);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground text-sm;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--brand) 28%, transparent);
+  }
+
+  /* Numbers that change in place — scores, counts — must not reflow their
+     container. Tabular figures make every digit the same width. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* One focus ring for the whole app: unlayered, and `!important`.
+   Both Tailwind's base layer and shadcn's component classes set focus styles of
+   their own, and shadcn's default is a translucent `ring-ring/50` that measures
+   roughly 2:1 against white — under the 3:1 WCAG 2.2 requires of a focus
+   indicator. Left to the cascade, controls ended up with three different rings
+   and one that was nearly invisible.
+
+   Written as longhands, and without `!important`. Author styles already outrank
+   the browser's own focus ring, so the flag was never needed — and combining it
+   with `var()` inside the `outline` shorthand made the build emit
+   `outline: 2px solid var(--ring)!important !important`, a doubled flag that is
+   invalid CSS. The browser dropped the whole declaration and fell back to its
+   default ring, which on a filled button is white on white. Longhands cannot be
+   mangled that way. */
+:focus-visible {
+  outline-color: var(--ring);
+  outline-style: solid;
+  outline-width: 2px;
+  outline-offset: 2px;
+
+  /* Outline is dropped from the transition list on purpose. Tailwind's
+     `transition-colors` includes `outline-color`, so the ring faded in from
+     whatever the element's colour was — on a green button with white text, a
+     white ring on a white header. A focus indicator has to be there the instant
+     focus lands; there is nothing to animate. */
+  transition-property: color, background-color, border-color, fill, stroke;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

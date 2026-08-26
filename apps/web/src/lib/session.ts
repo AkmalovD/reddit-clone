@@ -1,11 +1,24 @@
-export const ACCESS_TOKEN = 'access_token'
-export const REFRESH_COOKIE = 'refresh_token'
+import 'server-only'
+import { cookies } from 'next/headers'
+import {
+    ACCESS_COOKIE,
+    ACCESS_MAX_AGE,
+    COOKIE_BASE,
+    REFRESH_COOKIE,
+    REFRESH_MAX_AGE
+} from './session-config'
+import type { Tokens } from './session-config'
 
-export const ACCESS_MAX_AGE = 60 * 15
-export const REFRESH_MAX_AGE = 60 * 60 * 24 * 7
+export * from './session-config'
 
-export type Tokens = { accessToken: string; refreshToken: string }
+export async function setSession(tokens: Tokens) {
+    const store = await cookies()
+    store.set(ACCESS_COOKIE, tokens.accessToken, { ...COOKIE_BASE, maxAge: ACCESS_MAX_AGE })
+    store.set(REFRESH_COOKIE, tokens.refreshToken, { ...COOKIE_BASE, maxAge: REFRESH_MAX_AGE })
+}
 
-export const COOKIE_BASE = {
-    httpOnly: true
+export async function clearSession() {
+    const store = await cookies()
+    store.delete(ACCESS_COOKIE)
+    store.delete(REFRESH_COOKIE)
 }
