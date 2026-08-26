@@ -20,6 +20,12 @@ enum PostType {
   LINK
 }
 
+enum TokenRevokeReason {
+  ROTATED
+  LOGOUT
+  REUSE
+}
+
 model User {
   id           String   @id @default(uuid(7)) @db.Uuid
   username     String   @unique @db.VarChar(20)
@@ -34,8 +40,6 @@ model User {
   postVotes     PostVote[]
   commentVotes  CommentVote[]
   refreshTokens RefreshToken[]
-
-  replacedByHash String? @map("replaced_by_hash")
 
   @@map("users")
 }
@@ -158,7 +162,8 @@ model RefreshToken {
   userId    String    @map("user_id") @db.Uuid
   expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
   revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  revokedReason TokenRevokeReason? @map("revoked_reason")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

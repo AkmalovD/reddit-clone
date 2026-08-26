@@ -27,12 +27,6 @@ export async function createTestApp(): Promise<TestContext> {
     }
 }
 
-/**
- * Полный сброс состояния между тестами.
- *
- * Чистить только Postgres мало: закешированная страница переживёт TRUNCATE
- * и утечёт в следующий тест. Всё внешнее состояние сбрасывается в одном месте.
- */
 export async function resetState(app: INestApplication) {
     const prisma = app.get(PrismaService)
     const redis = app.get(RedisService)
@@ -55,7 +49,7 @@ export async function truncateAll(prisma: PrismaService) {
 export async function registerAndLogin(
     app: INestApplication,
     username = 'tester'
-): Promise<{ token: string; userId: string }> {
+): Promise<{ token: string; refreshToken: string; userId: string }> {
     const registered = await request(app.getHttpServer())
         .post('/api/auth/register')
         .send({
@@ -70,5 +64,9 @@ export async function registerAndLogin(
         .send({ username, password: 'supersecret123' })
         .expect(200)
 
-    return { token: login.body.accessToken as string, userId: registered.body.id as string }
+    return {
+        token: login.body.accessToken as string,
+        refreshToken: login.body.refreshToken as string,
+        userId: registered.body.id as string
+    }
 }

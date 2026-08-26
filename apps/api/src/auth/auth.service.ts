@@ -16,6 +16,8 @@ const ARGON2_OPTIONS = {
     parallelism: 1
 }
 
+const REUSE_LEEWAY_MS = 10_000
+
 @Injectable()
 export class AuthService implements OnModuleInit {
     private dummyHash!: string
@@ -79,34 +81,58 @@ export class AuthService implements OnModuleInit {
     async refresh(dto: RefreshDto) {
         const tokenHash = this.hashToken(dto.refreshToken)
 
-        const stored = await this.prisma.refreshToken.findUnique({
-            where: { tokenHash }
-        })
+        let rotatedUserId: string | null = null
 
-        if (!stored || stored.expiresAt < new Date()) {
+        try {
+            const rotated = await this.prisma.refreshToken.update({
+                where: { tokenHash, revokedAt: null, expiresAt: { gt: new Date() } },
+                data: { revokedAt: new Date(), revokedReason: 'ROTATED' },
+                select: { userId: true }
+            })
+
+            rotatedUserId = rotated.userId
+        } catch (error) {
+            const noRowMatched =
+                error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025'
+
+            if (!noRowMatched) throw error
+        }
+
+        if (rotatedUserId) return this.issueTokens(rotatedUserId)
+
+        return this.resolveRotationMiss(tokenHash)
+    }
+
+    private async resolveRotationMiss(tokenHash: string) {
+        const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } })
+
+        if (!stored || stored.expiresAt < new Date() || !stored.revokedAt) {
             throw new UnauthorizedException('invalid refresh token')
         }
 
-        if (stored.revokedAt) {
-            await this.prisma.refreshToken.updateMany({
-                where: { userId: stored.userId, revokedAt: null },
-                data: { revokedAt: new Date() }
-            })
-            throw new ForbiddenException('token reuse detected, all sessions revoked')
+        const rotated = stored.revokedReason === 'ROTATED'
+        const withinLeeway = Date.now() - stored.revokedAt.getTime() <= REUSE_LEEWAY_MS
+
+        if (rotated && withinLeeway) {
+            return this.issueTokens(stored.userId)
         }
 
-        await this.prisma.refreshToken.update({
-            where: { id: stored.id },
-            data: { revokedAt: new Date() }
+        if (!rotated) {
+            throw new UnauthorizedException('invalid refresh token')
+        }
+
+        await this.prisma.refreshToken.updateMany({
+            where: { userId: stored.userId, revokedAt: null },
+            data: { revokedAt: new Date(), revokedReason: 'REUSE' }
         })
 
-        return this.issueTokens(stored.userId)
+        throw new ForbiddenException('token reuse detected, all sessions revoked')
     }
 
     async logout(refreshtoken: string) {
         await this.prisma.refreshToken.updateMany({
             where: { tokenHash: this.hashToken(refreshtoken), revokedAt: null },
-            data: { revokedAt: new Date() }
+            data: { revokedAt: new Date(), revokedReason: 'LOGOUT' }
         })
         return { success: true }
     }
