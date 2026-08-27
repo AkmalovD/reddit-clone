@@ -1,9 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CacheService } from "../redis/cache.service";
 import { subscriptionsKey } from "../common/cache-keys";
 import { CreateSubredditDto } from "./dto/create-subreddit.dto";
 import { Prisma } from "../../generated/prisma/client";
+import { AddModeratorDto } from "./dto/add-moderator.dto";
 
 @Injectable()
 export class SubredditsService {
@@ -62,7 +63,7 @@ export class SubredditsService {
         })
 
         if (!subreddit) throw new NotFoundException('subreddit not found')
-            
+
         return subreddit
     }
 
@@ -107,5 +108,66 @@ export class SubredditsService {
         await this.cache.del(subscriptionsKey(userId))
 
         return { joined: false }
+    }
+
+    private async requireOwnership(name: string, actorId: string) {
+        const subreddit = await this.prisma.subreddit.findUnique({
+            where: { name: name.toLowerCase() },
+            select: {
+                id: true,
+                memberships: {
+                    where: { userId: actorId, role: 'OWNER' },
+                    select: { role: true }
+                }
+            }
+        })
+
+        if (!subreddit) throw new NotFoundException('subreddit not found')
+        if (subreddit.memberships.length === 0) {
+            throw new ForbiddenException('only the owner can manage moderators')
+        }
+
+        return subreddit
+    }
+
+    async addModerator(name: string, dto: AddModeratorDto, actorId: string) {
+        const subreddit = await this.requireOwnership(name, actorId)
+
+        const target = await this.prisma.user.findUnique({
+            where: { username: dto.username.toLowerCase() },
+            select: { id: true, username: true }
+        })
+
+        if (!target) throw new NotFoundException('user not found')
+
+        await this.prisma.membership.upsert({
+            where: { userId_subredditId: { userId: target.id, subredditId: subreddit.id } },
+            create: { userId: target.id, subredditId: subreddit.id, role: 'MODERATOR' },
+            update: { role: 'MODERATOR' }
+        })
+
+        await this.cache.del(subscriptionsKey(target.id))
+
+        return { username: target.username, role: 'MODERATOR' as const }
+    }
+
+    async removeModerator(name: string, username: string, actorId: string) {
+        const subreddit = await this.requireOwnership(name, actorId)
+
+        const target = await this.prisma.user.findUnique({
+            where: { username: username.toLowerCase() },
+            select: { id: true }
+        })
+
+        if (!target) throw new NotFoundException('user not found')
+
+        const demoted = await this.prisma.membership.updateMany({
+            where: { userId: target.id, subredditId: subreddit.id, role: 'MODERATOR' },
+            data: { role: 'MEMBER' }
+        })
+
+        if (demoted.count === 0) throw new NotFoundException('moderator not found')
+
+        return { username, role: 'MEMBER' as const }
     }
 }

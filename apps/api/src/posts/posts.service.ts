@@ -56,7 +56,7 @@ export class PostsService {
         private readonly prisma: PrismaService,
         private readonly cache: CacheService,
         private readonly pending: PendingVotesService
-    ) {}
+    ) { }
 
     async create(dto: CreatePostDto, userId: string) {
         const subreddit = await this.prisma.subreddit.findUnique({
@@ -292,14 +292,54 @@ export class PostsService {
         })
     }
 
+    private invalidateFeed(subredditName: string) {
+        return this.cache.delByPattern(`feed:${subredditName.toLowerCase()}:*`)
+    }
+
+
     async remove(id: string, userId: string) {
-        const removed = await this.prisma.post.updateMany({
-            where: { id, authorId: userId, deletedAt: null },
+        const { post, isAuthor, isModerator } = await this.postAccess(id, userId)
+
+        if (!isAuthor && !isModerator) throw new ForbiddenException('not your post')
+
+        await this.prisma.post.update({
+            where: { id },
             data: { deletedAt: new Date() }
         })
 
-        if (removed.count === 0) throw new NotFoundException('post not found')
+        // Сбрасываем всегда, а не только для модератора. Автор, удаливший пост
+        // и увидевший его на странице сообщества, тоже считает это поломкой —
+        // а цена ровно один SCAN на удаление, которое случается редко.
+        await this.invalidateFeed(post.subreddit.name)
 
-        return { delete: true }
+        return { deleted: true }
+    }
+
+
+    private async postAccess(postId: string, userId: string) {
+        const post = await this.prisma.post.findFirst({
+            where: { id: postId, deletedAt: null },
+            select: {
+                authorId: true,
+                type: true,
+                subreddit: {
+                    select: {
+                        name: true,
+                        memberships: {
+                            where: { userId, role: { in: ['MODERATOR', 'OWNER'] } },
+                            select: { role: true }
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!post) throw new NotFoundException('post not found')
+
+        return {
+            post,
+            isAuthor: post.authorId === userId,
+            isModerator: post.subreddit.memberships.length > 0
+        }
     }
 }

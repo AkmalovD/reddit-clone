@@ -21,7 +21,7 @@ const COMMENT_FIELDS = {
 
 @Injectable()
 export class CommentsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaService) { }
 
     async create(postId: string, dto: CreateCommentDto, userId: string) {
         return this.prisma.$transaction(async (tx) => {
@@ -74,7 +74,7 @@ export class CommentsService {
                 where: { id: postId },
                 data: { commentCount: { increment: 1 } }
             })
-             
+
             return comment
         })
     }
@@ -116,17 +116,38 @@ export class CommentsService {
     async remove(commentId: string, userId: string) {
         const comment = await this.prisma.comment.findUnique({
             where: { id: commentId },
-            select: { id: true, authorId: true, deletedAt: true }
+            select: {
+                authorId: true,
+                deletedAt: true,
+                post: {
+                    select: {
+                        subreddit: {
+                            select: {
+                                memberships: {
+                                    where: { userId, role: { in: ['MODERATOR', 'OWNER'] } },
+                                    select: { role: true }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         })
 
         if (!comment || comment.deletedAt) {
             throw new NotFoundException('comment not found')
-        } 
+        }
+
+        const isAuthor = comment.authorId === userId
+        const isModerator = comment.post.subreddit.memberships.length > 0
+
+        if (!isAuthor && !isModerator) throw new ForbiddenException('not your comment')
+
 
         if (comment.authorId !== userId) {
             throw new ForbiddenException('not your comment')
         }
-        
+
         await this.prisma.comment.update({
             where: { id: commentId },
             data: { deletedAt: new Date() }

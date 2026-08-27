@@ -40,9 +40,12 @@ export class PostsController {
     @Patch('posts/:id')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @ApiParam({ name: 'id', example: '019ffedc-3676-7769-b3d3-b91a2612fc1e' })
     @ApiOperation({
         summary: 'Отредактировать свой пост',
-        description: 'Меняется только тело текстового поста. Заголовок и ссылка неизменяемы.'
+        description:
+            'Меняется только тело текстового поста. Заголовок и ссылка неизменяемы: ' +
+            'по ним уже проголосовали. Модератор править чужой текст не может.'
     })
     @ApiResponse({ status: 200, description: 'Обновлён' })
     @ApiResponse({ status: 400, description: 'Пост не текстовый' })
@@ -59,12 +62,16 @@ export class PostsController {
     @Delete('posts/:id')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @ApiParam({ name: 'id', example: '019ffedc-3676-7769-b3d3-b91a2612fc1e' })
     @ApiOperation({
-        summary: 'Удалить свой пост',
-        description: 'Мягкое удаление: строка остаётся, комментарии сохраняются.'
+        summary: 'Удалить пост',
+        description:
+            'Автор поста, а также модератор и владелец сообщества. ' +
+            'Мягкое удаление: строка остаётся, комментарии сохраняются.'
     })
     @ApiResponse({ status: 200, description: '{ deleted: true }' })
-    @ApiResponse({ status: 404, description: 'Не найден, удалён или чужой' })
+    @ApiResponse({ status: 403, description: 'Не автор и не модератор сообщества' })
+    @ApiResponse({ status: 404, description: 'Не найден или уже удалён' })
     remove(
         @Param('id') id: string, 
         @CurrentUser() user: AuthUser

@@ -7,10 +7,6 @@ export class CacheService {
 
     constructor(private readonly redis: RedisService) {}
 
-    /**
-     * Любая ошибка кеша трактуется как промах.
-     * Отвалившийся Redis обязан замедлить приложение, но не сломать его.
-     */
     async get<T>(key: string): Promise<T | null> {
         try {
             const raw = await this.redis.get(key)
@@ -38,7 +34,6 @@ export class CacheService {
         }
     }
 
-    /** Cache-aside: читаем кеш, при промахе считаем и кладём обратно. */
     async wrap<T>(key: string, ttlSeconds: number, produce: () => Promise<T>): Promise<T> {
         const cached = await this.get<T>(key)
         if (cached !== null) return cached
@@ -47,5 +42,27 @@ export class CacheService {
         await this.set(key, fresh, ttlSeconds)
 
         return fresh
+    }
+
+    async delByPattern(pattern: string): Promise<void> {
+        let cursor = '0'
+
+        try {
+            do {
+                const [next, keys] = await this.redis.scan(
+                    cursor,
+                    'MATCH',
+                    pattern,
+                    'COUNT',
+                    100
+                )
+
+                cursor = next
+
+                if (keys.length > 0) await this.redis.del(...keys)
+            } while (cursor !== '0')
+        } catch {
+            this.logger.warn(`не удалось сбросить по шаблону: ${pattern}`)
+        }
     }
 }
