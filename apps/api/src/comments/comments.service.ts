@@ -141,10 +141,7 @@ export class CommentsService {
         const isAuthor = comment.authorId === userId
         const isModerator = comment.post.subreddit.memberships.length > 0
 
-        if (!isAuthor && !isModerator) throw new ForbiddenException('not your comment')
-
-
-        if (comment.authorId !== userId) {
+        if (!isAuthor && !isModerator) {
             throw new ForbiddenException('not your comment')
         }
 

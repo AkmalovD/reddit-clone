@@ -61,13 +61,15 @@ export class CommentsController {
     @ApiBearerAuth()
     @ApiParam({ name: 'id', example: '01a00faa-61be-7178-aec1-cd386324481c' })
     @ApiOperation({
-        summary: 'Удалить свой комментарий',
+        summary: 'Удалить комментарий',
         description:
+            'Автор комментария, а также модератор и владелец сообщества. ' +
             'Мягкое удаление: узел остаётся в дереве, тело заменяется на [deleted], ' +
-            'автор скрывается, ответы сохраняются.'
+            'автор скрывается, ответы сохраняются. Счётчик комментариев у поста ' +
+            'не уменьшается — он описывает размер обсуждения.'
     })
     @ApiResponse({ status: 200, description: '{ deleted: true }' })
-    @ApiResponse({ status: 403, description: 'Чужой комментарий' })
+    @ApiResponse({ status: 403, description: 'Не автор и не модератор сообщества' })
     @ApiResponse({ status: 404, description: 'Не найден или уже удалён' })
     remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
         return this.comments.remove(id, user.id)
