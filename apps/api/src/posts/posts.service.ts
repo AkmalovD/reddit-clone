@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "../../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CacheService } from "../redis/cache.service";
@@ -8,6 +8,7 @@ import { CreatePostDto } from "./dto/create-post.dto";
 import { ListPostsDto } from "./dto/lists-post.dto";
 import { decodeCursor, encodeCursor } from "./feed-cursor";
 import type { FeedCursor } from "./feed-cursor";
+import { UpdatePostDto } from "./dto/update-post.dto";
 
 const POST_LIST_FIELDS = {
     id: true,
@@ -28,27 +29,12 @@ const ORDER_BY = {
     top: [{ score: 'desc' }, { id: 'desc' }]
 } satisfies Record<string, Prisma.PostOrderByWithRelationInput[]>
 
-// Лента НЕ прибавляет отложенную дельту. Закешированная страница хранит score
-// на момент кеширования; после сброса дельта обнуляется, и сумма
-// "старый score + новая дельта" оказалась бы меньше реальной — счётчик прыгнул
-// бы назад. Поэтому лента отстаёт до TTL, но только вверх.
 const FEED_TTL_SECONDS = 30
 
-/**
- * Список подписок меняется редко, а читается на каждое открытие главной.
- * Саму страницу общей ленты кешировать почти бесполезно — она у каждого своя,
- * попаданий мало, памяти много. А вот подписки — единственная часть, общая
- * между запросами одного пользователя.
- */
 const SUBSCRIPTIONS_TTL_SECONDS = 300
 
 type Sort = 'hot' | 'new' | 'top'
 
-/**
- * Имя колонки нельзя передать параметром — оно попадает в текст запроса.
- * Поэтому оно берётся только отсюда: даже если однажды снимут валидацию DTO,
- * в SQL всё равно уедет одна из трёх заранее написанных строк.
- */
 const SORT_SQL = {
     hot: { column: Prisma.sql`hot_rank`, cast: Prisma.sql`double precision` },
     new: { column: Prisma.sql`created_at`, cast: Prisma.sql`timestamptz` },
@@ -62,7 +48,6 @@ type FeedPage = {
     nextCursor: string | null
 }
 
-/** Первый запрос общей ленты возвращает только порядок; тела берутся вторым. */
 type FeedIdRow = { id: string; sort_value: Date | number }
 
 @Injectable()
@@ -110,12 +95,6 @@ export class PostsService {
         return this.attachUserVotes(page, userId)
     }
 
-    /**
-     * Общая лента: посты из всех сообществ, на которые подписан пользователь.
-     *
-     * Гость и подписчик нуля сообществ получают ленту по всему сайту — пустая
-     * страница технически честнее, но выглядит как поломка.
-     */
     async homeFeed(query: ListPostsDto, userId?: string) {
         const limit = query.limit ?? 25
         const sort = query.sort ?? 'hot'
@@ -149,18 +128,6 @@ export class PostsService {
         )
     }
 
-    /**
-     * Ключевой запрос фазы. Наивное `subreddit_id IN (...)` заставляет Postgres
-     * прочитать все посты всех подписок и отсортировать их: на 50 подписках это
-     * 282 000 строк ради 26. Индекс `(subreddit_id, hot_rank, id)` там не
-     * помогает — он упорядочивает каждое сообщество по отдельности, а порядок
-     * между ними не знает.
-     *
-     * LATERAL опирается на простое свойство: топ-N объединения списков целиком
-     * содержится в объединении топ-N каждого списка. Значит из каждого
-     * сообщества хватает N+1 строки — и эти строки читаются тем самым индексом,
-     * подряд, без сортировки. 1 300 строк вместо 282 000, замерено.
-     */
     private querySubscribedFeed(
         subredditIds: string[],
         sort: Sort,
@@ -169,11 +136,6 @@ export class PostsService {
     ) {
         const { column, cast } = SORT_SQL[sort]
 
-        // Курсор обязан быть ВНУТРИ ветки. Снаружи он даёт верные первые две
-        // страницы и молча неверные начиная с четвёртой: ветка отдаёт свой
-        // топ-N и закрывается, после чего крупное сообщество пропадает из ленты.
-        // Кортежное сравнение, а не развёрнутое ИЛИ: только оно уходит в
-        // условие индекса, ИЛИ остаётся фильтром и вдвое поднимает чтение.
         const keyset = cursor
             ? Prisma.sql`AND (p.${column}, p.id) < (${cursor.value}::${cast}, ${cursor.id}::uuid)`
             : Prisma.empty
@@ -195,7 +157,6 @@ export class PostsService {
         `
     }
 
-    /** Лента по всему сайту: для гостя и для того, кто ещё никуда не вступил. */
     private querySiteWideFeed(sort: Sort, cursor: FeedCursor | null, limit: number) {
         const { column, cast } = SORT_SQL[sort]
 
@@ -213,11 +174,6 @@ export class PostsService {
         `
     }
 
-    /**
-     * Порядок задал сырой запрос, тела берём обычным Prisma тем же select, что и
-     * лента сообщества — форма ответа обязана совпадать, иначе клиенту придётся
-     * различать две ленты. Выборка 25 строк по первичному ключу стоит копейки.
-     */
     private async hydrateFeed(rows: FeedIdRow[], limit: number, userId?: string) {
         const hasMore = rows.length > limit
         const page = hasMore ? rows.slice(0, limit) : rows
@@ -247,7 +203,6 @@ export class PostsService {
         )
     }
 
-    /** Общая часть страницы — одинакова для всех, её и кешируем. */
     private async queryFeed(
         name: string,
         sort: 'hot' | 'new' | 'top',
@@ -278,7 +233,6 @@ export class PostsService {
         }
     }
 
-    /** Персональная часть — поверх кеша, одним запросом на всю страницу. */
     private async attachUserVotes(page: FeedPage, userId?: string) {
         if (!userId || page.items.length === 0) {
             return {
@@ -308,9 +262,6 @@ export class PostsService {
 
         if (!post) throw new NotFoundException('post not found')
 
-        // страница поста не кешируется, поэтому здесь можно показать точное
-        // значение: база плюс ещё не сброшенная дельта из Redis.
-        // В ленте так делать нельзя — см. комментарий у FEED_TTL_SECONDS
         const pendingScore = await this.pending.getPostDelta(id)
         const score = post.score + pendingScore
 
@@ -322,5 +273,33 @@ export class PostsService {
         })
 
         return { ...post, score, userVote: vote?.value ?? 0 }
+    }
+
+    async update(id: string, dto: UpdatePostDto, userId: string) {
+        const post = await this.prisma.post.findFirst({
+            where: { id, deletedAt: null },
+            select: { authorId: true, type: true }
+        })
+
+        if (!post) throw new NotFoundException('post not found')
+        if (post.authorId !== userId) throw new ForbiddenException('not your post')
+        if (post.type !== 'TEXT') throw new BadRequestException('only text posts can be edited')
+
+        return this.prisma.post.update({
+            where: { id },
+            data: { body: dto.body, editedAt: new Date() },
+            select: { ...POST_LIST_FIELDS, body: true, editedAt: true }
+        })
+    }
+
+    async remove(id: string, userId: string) {
+        const removed = await this.prisma.post.updateMany({
+            where: { id, authorId: userId, deletedAt: null },
+            data: { deletedAt: new Date() }
+        })
+
+        if (removed.count === 0) throw new NotFoundException('post not found')
+
+        return { delete: true }
     }
 }
