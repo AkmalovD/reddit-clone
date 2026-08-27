@@ -1,15 +1,20 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { CacheService } from "../redis/cache.service";
+import { subscriptionsKey } from "../common/cache-keys";
 import { CreateSubredditDto } from "./dto/create-subreddit.dto";
 import { Prisma } from "../../generated/prisma/client";
 
 @Injectable()
 export class SubredditsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly cache: CacheService
+    ) { }
 
     async create(dto: CreateSubredditDto, userId: string) {
         try {
-            return await this.prisma.$transaction(async (tx) => {
+            const created = await this.prisma.$transaction(async (tx) => {
                 const subreddit = await tx.subreddit.create({
                     data: {
                         name: dto.name.toLowerCase(),
@@ -27,6 +32,12 @@ export class SubredditsService {
 
                 return subreddit
             })
+
+            // создатель попал в участники в той же транзакции — его список
+            // подписок изменился, кеш ленты обязан это увидеть
+            await this.cache.del(subscriptionsKey(userId))
+
+            return created
         } catch (error) {
             if (
                 error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -76,6 +87,8 @@ export class SubredditsService {
             }
         }
 
+        await this.cache.del(subscriptionsKey(userId))
+
         return { joined: true }
     }
 
@@ -90,6 +103,8 @@ export class SubredditsService {
         await this.prisma.membership.deleteMany({
             where: { userId, subredditId: subreddit.id, role: { not: 'OWNER' } }
         })
+
+        await this.cache.del(subscriptionsKey(userId))
 
         return { joined: false }
     }

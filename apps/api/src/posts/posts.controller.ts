@@ -25,6 +25,22 @@ export class PostsController {
         return this.posts.create(dto, user.id)
     }
 
+    @Get('feed')
+    @UseGuards(OptionalJwtAuthGuard)
+    @ApiOptionalBearerAuth()
+    @ApiOperation({
+        summary: 'Общая лента',
+        description:
+            'Посты из всех сообществ, на которые подписан пользователь. ' +
+            'Без токена и при отсутствии подписок отдаёт ленту по всему сайту. ' +
+            'Курсор непрозрачный — передавайте nextCursor из предыдущего ответа как есть.'
+    })
+    @ApiResponse({ status: 200, description: '{ items, nextCursor }' })
+    @ApiResponse({ status: 400, description: 'Испорченный курсор' })
+    homeFeed(@Query() query: ListPostsDto, @CurrentUser() user: AuthUser | null) {
+        return this.posts.homeFeed(query, user?.id)
+    }
+
     @Get('subreddits/:name/posts')
     @UseGuards(OptionalJwtAuthGuard)
     @ApiOptionalBearerAuth()

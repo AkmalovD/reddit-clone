@@ -83,6 +83,7 @@ model Post {
   subredditId  String    @map("subreddit_id") @db.Uuid
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  editedAt DateTime? @map("edited_at") @db.Timestamptz(3)
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(3)
   upvotes      Int       @default(0)
   downvotes    Int       @default(0)
@@ -96,6 +97,13 @@ model Post {
   @@index([subredditId, hotRank(sort: Desc), id(sort: Desc)])
   @@index([subredditId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([subredditId, score(sort: Desc), id(sort: Desc)])
+
+  // Те же три сортировки, но без ведущего subredditId — для ленты по всему
+  // сайту, которую видят гость и подписчик нуля сообществ. Ведущий столбец
+  // индекса нельзя пропустить, поэтому переиспользовать верхние три нельзя.
+  @@index([hotRank(sort: Desc), id(sort: Desc)])
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([score(sort: Desc), id(sort: Desc)])
   @@map("posts")
 }
 
