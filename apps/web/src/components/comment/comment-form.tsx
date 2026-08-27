@@ -32,8 +32,8 @@ export function CommentForm({
         return (
             <div
                 className={cn(
-                    'flex flex-wrap items-center justify-between gap-3 rounded-lg',
-                    'border border-border bg-muted px-4 py-3',
+                    'flex flex-wrap items-center justify-between gap-3',
+                    'rounded-xl bg-muted px-4 py-3',
                     className
                 )}
             >
@@ -41,10 +41,10 @@ export function CommentForm({
                     Sign in to join the discussion.
                 </p>
                 <div className="flex gap-2">
-                    <Button asChild variant="outline" size="sm" className="rounded-full">
+                    <Button asChild variant="outline" size="sm">
                         <Link href="/login">Log in</Link>
                     </Button>
-                    <Button asChild size="sm" className="rounded-full">
+                    <Button asChild size="sm">
                         <Link href="/register">Sign up</Link>
                     </Button>
                 </div>
@@ -81,7 +81,7 @@ export function CommentForm({
     return (
         <form onSubmit={submit} className={cn('space-y-2', className)}>
             <label htmlFor="comment-body" className="text-xs text-muted-foreground">
-                Comment as <span className="font-bold text-foreground">u/{username}</span>
+                Comment as <span className="font-semibold text-foreground">u/{username}</span>
             </label>
 
             <Textarea
@@ -96,12 +96,7 @@ export function CommentForm({
             <FieldError>{error}</FieldError>
 
             <div className="flex justify-end">
-                <Button
-                    type="submit"
-                    size="sm"
-                    disabled={pending || body.trim().length === 0}
-                    className="rounded-full"
-                >
+                <Button type="submit" disabled={pending || body.trim().length === 0}>
                     {pending && (
                         <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                     )}

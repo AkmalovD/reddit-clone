@@ -39,14 +39,12 @@ export default async function SubredditPage({
             banner={<SubredditBanner subreddit={subreddit} joined={false} />}
             aside={<AboutCard subreddit={subreddit} />}
         >
-            <div className="space-y-3">
-                <SortBar basePath={`/g/${name}`} active={active} />
-                <PostList
-                    posts={posts}
-                    showSubreddit={false}
-                    emptyAction={{ href: `/submit?g=${name}`, label: 'Create post' }}
-                />
-            </div>
+            <SortBar basePath={`/g/${name}`} active={active} />
+            <PostList
+                posts={posts}
+                showSubreddit={false}
+                emptyAction={{ href: `/submit?g=${name}`, label: 'Create post' }}
+            />
         </SiteShell>
     )
 }

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { Cake, MessageSquare } from 'lucide-react'
+import { Panel, PanelHeading } from '@/components/common/panel'
 import { SiteShell } from '@/components/layout/site-shell'
 import { PostList } from '@/components/post/post-list'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
 import { formatScore } from '@/lib/format'
 import { MOCK_FEED_POSTS } from '@/lib/mock'
 
@@ -26,17 +26,13 @@ export default async function ProfilePage({ params }: { params: Promise<Params> 
     return (
         <SiteShell
             aside={
-                <section className="rounded-lg border border-border bg-card p-4">
-                    <h2 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                        About u/{username}
-                    </h2>
+                <Panel className="p-4">
+                    <PanelHeading>About u/{username}</PanelHeading>
 
-                    <Separator className="my-4" />
-
-                    <dl className="space-y-2.5 text-sm">
+                    <dl className="mt-4 space-y-3 text-sm">
                         <div className="flex items-center gap-2">
                             <MessageSquare
-                                className="size-4 text-muted-foreground"
+                                className="size-4 shrink-0 text-muted-foreground"
                                 aria-hidden="true"
                             />
                             <dt className="sr-only">Post karma</dt>
@@ -48,17 +44,20 @@ export default async function ProfilePage({ params }: { params: Promise<Params> 
                             </dd>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Cake className="size-4 text-muted-foreground" aria-hidden="true" />
+                            <Cake
+                                className="size-4 shrink-0 text-muted-foreground"
+                                aria-hidden="true"
+                            />
                             <dt className="sr-only">Joined</dt>
                             <dd className="text-muted-foreground">Joined Mar 2021</dd>
                         </div>
                     </dl>
-                </section>
+                </Panel>
             }
         >
-            <section className="mb-3 flex items-center gap-3 rounded-lg border border-border bg-card p-4">
-                <Avatar className="size-12">
-                    <AvatarFallback className="bg-muted text-sm font-bold">
+            <Panel className="mb-4 flex items-center gap-4 p-4 sm:p-5">
+                <Avatar className="size-16">
+                    <AvatarFallback className="bg-muted text-lg font-bold">
                         {username.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                 </Avatar>
@@ -69,7 +68,7 @@ export default async function ProfilePage({ params }: { params: Promise<Params> 
                         {formatScore(karma)} post karma
                     </p>
                 </div>
-            </section>
+            </Panel>
 
             <PostList posts={posts} />
         </SiteShell>

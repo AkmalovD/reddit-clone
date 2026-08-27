@@ -30,7 +30,7 @@ export function PostList({
                 description="Nothing has been posted here. Be the first."
                 action={
                     emptyAction && (
-                        <Button asChild className="rounded-full">
+                        <Button asChild>
                             <Link href={emptyAction.href}>{emptyAction.label}</Link>
                         </Button>
                     )
@@ -40,18 +40,24 @@ export function PostList({
     }
 
     return (
-        <div className="space-y-3">
-            {posts.map((post) => (
-                <PostCard key={post.id} post={post} showSubreddit={showSubreddit} />
-            ))}
+        <>
+            {/* One surface, hairline-parted rows. `overflow-hidden` is what keeps the
+                first and last row from squaring off the 16px corners. */}
+            <div className="overflow-hidden rounded-2xl bg-card">
+                <div className="divide-y divide-hairline">
+                    {posts.map((post) => (
+                        <PostCard key={post.id} post={post} showSubreddit={showSubreddit} />
+                    ))}
+                </div>
+            </div>
 
             {nextCursor && basePath && (
-                <div className="pt-1 pb-6">
-                    <Button asChild variant="outline" className="w-full rounded-full">
+                <div className="pt-4 pb-6">
+                    <Button asChild variant="outline" size="lg" className="w-full">
                         <Link href={`${basePath}?cursor=${nextCursor}`}>Load more</Link>
                     </Button>
                 </div>
             )}
-        </div>
+        </>
     )
 }

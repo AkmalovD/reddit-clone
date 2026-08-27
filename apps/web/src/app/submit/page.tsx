@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import { FileText, Link as LinkIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { Panel, PanelHeading } from '@/components/common/panel'
 import { SiteShell } from '@/components/layout/site-shell'
 import { FieldError } from '@/components/feedback/field-error'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import type { PostType } from '@/lib/types'
@@ -40,10 +40,8 @@ export default function SubmitPage() {
     return (
         <SiteShell
             aside={
-                <section className="rounded-lg border border-border bg-card p-4">
-                    <h2 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                        Posting rules
-                    </h2>
+                <Panel className="p-4">
+                    <PanelHeading>Posting rules</PanelHeading>
                     {/* The numbers come from the <ol>, not from typed-in digits —
                         these really are ordered, and the markup should say so. */}
                     <ol className="mt-3 list-inside list-decimal space-y-2 font-body text-sm/6 text-muted-foreground">
@@ -51,23 +49,23 @@ export default function SubmitPage() {
                         <li>Link to the source, not to a summary of it.</li>
                         <li>Disagree with the argument, not the person.</li>
                     </ol>
-                </section>
+                </Panel>
             }
         >
-            <h1 className="text-lg font-bold">Create a post</h1>
-
-            <Separator className="my-3" />
+            <h1 className="mb-3 px-1 text-xl font-bold tracking-tight">Create a post</h1>
 
             <form
                 onSubmit={submit}
-                className="space-y-4 rounded-lg border border-border bg-card p-4"
+                className="space-y-5 rounded-2xl bg-card p-4 sm:p-5"
             >
-                {/* Two options, both always visible: a segmented control rather than
-                    a select, because the choice changes the rest of the form. */}
+                {/* Two options, both always visible: a segmented control rather than a
+                    select, because the choice changes the rest of the form. The selected
+                    pill is the card surface — the same signal the sort bar uses, so the
+                    product has one idea of "chosen" rather than two. */}
                 <div
                     role="tablist"
                     aria-label="Post type"
-                    className="flex gap-1 border-b border-hairline"
+                    className="inline-flex gap-1 rounded-full bg-muted p-1"
                 >
                     {TABS.map(({ value, label, icon: Icon }) => (
                         <button
@@ -77,11 +75,11 @@ export default function SubmitPage() {
                             aria-selected={type === value}
                             onClick={() => setType(value)}
                             className={cn(
-                                'flex items-center gap-2 px-4 py-2 text-sm font-bold',
-                                '-mb-px border-b-2 transition-colors',
+                                'flex h-8 items-center gap-2 rounded-full px-4',
+                                'text-sm font-semibold transition-colors',
                                 type === value
-                                    ? 'border-brand text-foreground'
-                                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                                    ? 'bg-card text-foreground'
+                                    : 'text-muted-foreground hover:text-foreground'
                             )}
                         >
                             <Icon className="size-4" aria-hidden="true" />
@@ -90,7 +88,7 @@ export default function SubmitPage() {
                     ))}
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                     <div className="flex items-baseline justify-between">
                         <Label htmlFor="title">Title</Label>
                         <span
@@ -115,7 +113,7 @@ export default function SubmitPage() {
                 </div>
 
                 {type === 'TEXT' ? (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                         <Label htmlFor="body">Text</Label>
                         <Textarea
                             id="body"
@@ -126,7 +124,7 @@ export default function SubmitPage() {
                         />
                     </div>
                 ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                         <Label htmlFor="url">Link</Label>
                         <Input
                             id="url"
@@ -142,14 +140,10 @@ export default function SubmitPage() {
                 <FieldError>{error}</FieldError>
 
                 <div className="flex justify-end gap-2">
-                    <Button type="reset" variant="outline" className="rounded-full font-bold">
+                    <Button type="reset" variant="ghost">
                         Clear
                     </Button>
-                    <Button
-                        type="submit"
-                        disabled={title.trim().length === 0}
-                        className="rounded-full font-bold"
-                    >
+                    <Button type="submit" disabled={title.trim().length === 0}>
                         Post
                     </Button>
                 </div>

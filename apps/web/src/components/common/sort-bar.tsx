@@ -19,13 +19,14 @@ type Props = {
  * Links, not tab buttons. Sort is server state — it belongs in the URL, works
  * without JavaScript, survives a refresh, and can be shared. A `<Tabs>` component
  * would have given us none of that.
+ *
+ * The bar sits on the canvas rather than in a box of its own. The selected pill
+ * is the card surface, so the control reads as the top edge of the feed below it
+ * instead of a second panel stacked above it.
  */
 export function SortBar({ basePath, active }: Props) {
     return (
-        <nav
-            aria-label="Sort posts"
-            className="flex items-center gap-1 rounded-lg border border-border bg-card p-2"
-        >
+        <nav aria-label="Sort posts" className="mb-3 flex items-center gap-1">
             {SORTS.map(({ value, label, icon: Icon }) => {
                 const current = value === active
 
@@ -35,11 +36,11 @@ export function SortBar({ basePath, active }: Props) {
                         href={value === 'hot' ? basePath : `${basePath}?sort=${value}`}
                         aria-current={current ? 'page' : undefined}
                         className={cn(
-                            'flex items-center gap-1.5 rounded-full px-3 py-1.5',
-                            'text-sm font-semibold transition-colors',
+                            'flex h-9 items-center gap-1.5 rounded-full px-3.5',
+                            'text-sm transition-colors',
                             current
-                                ? 'bg-accent text-foreground'
-                                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                                ? 'bg-card font-semibold text-foreground'
+                                : 'font-medium text-muted-foreground hover:bg-accent hover:text-foreground'
                         )}
                     >
                         <Icon className="size-4" aria-hidden="true" />

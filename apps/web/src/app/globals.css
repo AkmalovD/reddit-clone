@@ -11,6 +11,21 @@
    by green. Every foreground value below was measured against its background
    with a WCAG contrast script; the ratio is noted so future edits can't quietly
    break it. Flat fills only — no gradients anywhere.
+
+   Geometry, which is where the product gets its period rather than from colour:
+
+     Surfaces   `rounded-2xl bg-card`, and no border. The card is already two
+                steps lighter than the canvas in both themes, so an outline was
+                drawing a box around something that was never ambiguous. Related
+                rows share one surface and are parted by `divide-hairline`
+                instead of each becoming a box of its own.
+     Controls   `rounded-full`. Buttons, chips, the vote pill, the search field,
+                the sort links, the segmented control — every interactive thing
+                that is not a text field.
+     Fields     `rounded-xl`, 40px tall, the only components that keep a border,
+                because an input has to look like somewhere you can type.
+
+   Two radii and one border rule. The whole interface is built from them.
    --------------------------------------------------------------------------- */
 
 :root {
@@ -49,6 +64,9 @@
   --link: #0071c7;              /* 5.02:1 — Reddit's #0079d3 misses AA at 4.49 */
   --destructive: #c1352b;       /* errors stay red; red is meaning, not brand */
 
+  /* Feeds shadcn's derived scale. Surfaces and fields set their radius
+     explicitly (see the note above) rather than through this token, so changing
+     it moves the primitives without moving the layout. */
   --radius: 0.5rem;
 }
 

@@ -38,12 +38,14 @@ export default async function SearchPage({
 
     return (
         <SiteShell>
-            <h1 className="mb-1 text-lg font-bold">
-                Results for <span className="text-muted-foreground">{query}</span>
-            </h1>
-            <p className="mb-3 text-xs text-muted-foreground">
-                {formatCount(results.length, 'post', 'posts')}
-            </p>
+            <div className="mb-3 px-1">
+                <h1 className="text-xl font-bold tracking-tight">
+                    Results for <span className="text-muted-foreground">{query}</span>
+                </h1>
+                <p className="tnum mt-0.5 text-xs text-muted-foreground">
+                    {formatCount(results.length, 'post', 'posts')}
+                </p>
+            </div>
 
             {results.length === 0 ? (
                 <EmptyState
@@ -51,7 +53,7 @@ export default async function SearchPage({
                     title="No posts matched"
                     description="Try fewer words, or a different spelling."
                     action={
-                        <Button asChild variant="outline" className="rounded-full">
+                        <Button asChild variant="outline">
                             <Link href="/">Back to the feed</Link>
                         </Button>
                     }

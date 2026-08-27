@@ -7,6 +7,9 @@ import type { Subreddit } from '@/lib/types'
  * A flat brand band, no gradient and no image. The band is the only place the
  * brand colour covers a large area, which is what makes the vote arrows read as
  * accents rather than decoration.
+ *
+ * The name sits below the band rather than on it. Text over a 3.17:1 fill is the
+ * kind of thing that looks fine in a mock and is unreadable on a real screen.
  */
 export function SubredditBanner({
     subreddit,
@@ -16,13 +19,13 @@ export function SubredditBanner({
     joined: boolean
 }) {
     return (
-        <section className="overflow-hidden rounded-lg border border-border bg-card">
-            <div className="h-16 bg-brand sm:h-20" />
+        <section className="overflow-hidden rounded-2xl bg-card">
+            <div className="h-20 bg-brand sm:h-28" />
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-4 pb-4">
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-3 px-4 pb-4">
                 <CommunityAvatar
                     name={subreddit.name}
-                    className="-mt-5 size-16 border-4 border-card text-2xl"
+                    className="-mt-8 size-20 border-4 border-card text-3xl"
                 />
 
                 <div className="min-w-0 flex-1">

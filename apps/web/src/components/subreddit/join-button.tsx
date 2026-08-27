@@ -13,7 +13,7 @@ type Props = {
  * "Leave" under the pointer, so the destructive action never fires by surprise
  * and never needs a confirmation dialog.
  */
-export function JoinButton({ initialJoined, size = 'sm' }: Props) {
+export function JoinButton({ initialJoined, size = 'default' }: Props) {
     const [joined, setJoined] = useState(initialJoined)
     const [hovered, setHovered] = useState(false)
 
@@ -27,7 +27,7 @@ export function JoinButton({ initialJoined, size = 'sm' }: Props) {
                 onMouseLeave={() => setHovered(false)}
                 onFocus={() => setHovered(true)}
                 onBlur={() => setHovered(false)}
-                className="w-24 rounded-full font-bold"
+                className="w-24"
             >
                 {hovered ? 'Leave' : 'Joined'}
             </Button>
@@ -35,11 +35,7 @@ export function JoinButton({ initialJoined, size = 'sm' }: Props) {
     }
 
     return (
-        <Button
-            size={size}
-            onClick={() => setJoined(true)}
-            className="w-24 rounded-full font-bold"
-        >
+        <Button size={size} onClick={() => setJoined(true)} className="w-24">
             Join
         </Button>
     )

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Panel, PanelHeading } from '@/components/common/panel'
 import { CommunityAvatar } from '@/components/subreddit/community-avatar'
 import { formatScore } from '@/lib/format'
 import type { Subreddit } from '@/lib/types'
@@ -9,23 +10,21 @@ import type { Subreddit } from '@/lib/types'
  */
 export function CommunityList({ communities }: { communities: Subreddit[] }) {
     return (
-        <section className="rounded-lg border border-border bg-card">
-            <h2 className="border-b border-hairline px-4 py-3 text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                Top communities
-            </h2>
+        <Panel className="overflow-hidden p-2">
+            <PanelHeading className="px-3 pt-2 pb-1">Top communities</PanelHeading>
 
-            <ol className="divide-y divide-hairline">
+            <ol>
                 {communities.map((community, index) => (
                     <li key={community.id}>
                         <Link
                             href={`/g/${community.name}`}
-                            className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent"
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-accent"
                         >
-                            <span className="tnum w-4 text-sm font-bold text-muted-foreground">
+                            <span className="tnum w-3 text-xs font-bold text-muted-foreground">
                                 {index + 1}
                             </span>
-                            <CommunityAvatar name={community.name} className="text-xs" />
-                            <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                            <CommunityAvatar name={community.name} className="size-6 text-xs" />
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium">
                                 g/{community.name}
                             </span>
                             <span className="tnum text-xs text-muted-foreground">
@@ -35,6 +34,6 @@ export function CommunityList({ communities }: { communities: Subreddit[] }) {
                     </li>
                 ))}
             </ol>
-        </section>
+        </Panel>
     )
 }

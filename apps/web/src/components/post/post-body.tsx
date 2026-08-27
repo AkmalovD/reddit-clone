@@ -15,8 +15,8 @@ export function PostBody({ post, className }: { post: PostDetail; className?: st
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                    'flex items-center gap-2 rounded-lg border border-border bg-muted',
-                    'px-3 py-2.5 text-sm text-link transition-colors hover:bg-accent',
+                    'flex items-center gap-2 rounded-xl bg-muted px-4 py-3',
+                    'text-sm text-link transition-colors hover:bg-accent',
                     className
                 )}
             >
@@ -29,7 +29,7 @@ export function PostBody({ post, className }: { post: PostDetail; className?: st
     if (!post.body) return null
 
     return (
-        <div className={cn('font-body text-sm/6 whitespace-pre-line', className)}>
+        <div className={cn('font-body text-[0.9375rem]/7 whitespace-pre-line', className)}>
             {post.body}
         </div>
     )

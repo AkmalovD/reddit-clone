@@ -10,7 +10,7 @@ export function LogoMark({ className }: { className?: string }) {
         <svg
             viewBox="0 0 24 24"
             aria-hidden="true"
-            className={cn('size-6 shrink-0', className)}
+            className={cn('size-7 shrink-0', className)}
         >
             <circle cx="12" cy="12" r="12" className="fill-brand" />
             <path
@@ -29,7 +29,7 @@ export function Logo({ className }: { className?: string }) {
             className={cn('flex items-center gap-2 rounded-md', className)}
         >
             <LogoMark />
-            <span className="hidden text-lg font-semibold tracking-tight sm:inline">
+            <span className="hidden text-xl font-bold tracking-tight sm:inline">
                 Grove
             </span>
         </Link>

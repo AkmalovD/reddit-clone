@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
 import { CommentForm } from '@/components/comment/comment-form'
 import { CommentTree } from '@/components/comment/comment-tree'
+import { Panel, PanelHeading } from '@/components/common/panel'
 import { SiteShell } from '@/components/layout/site-shell'
 import { PostActions } from '@/components/post/post-actions'
 import { PostBody } from '@/components/post/post-body'
 import { PostMeta } from '@/components/post/post-meta'
 import { AboutCard } from '@/components/subreddit/about-card'
-import { Separator } from '@/components/ui/separator'
-import { VoteControl } from '@/components/vote/vote-control'
-import { formatCount } from '@/lib/format'
 import { MOCK_COMMENTS, MOCK_POST, MOCK_SUBREDDIT } from '@/lib/mock'
+import { formatCount } from '@/lib/format'
 
 export const metadata: Metadata = { title: MOCK_POST.title }
 
@@ -26,47 +25,42 @@ export default async function PostPage({
 
     return (
         <SiteShell aside={<AboutCard subreddit={subreddit} />}>
-            <article className="rounded-lg border border-border bg-card">
-                <div className="flex gap-1 p-2 sm:p-3">
-                    <VoteControl score={post.score} userVote={post.userVote} variant="rail" />
+            {/* The title is the largest thing on the page and starts at the left
+                margin. Nothing sits beside it: the vote column that used to be there
+                indented every line of the post by 44px for the sake of two arrows. */}
+            <Panel className="p-4 sm:p-5">
+                <PostMeta
+                    subreddit={post.subreddit.name}
+                    author={post.author.username}
+                    createdAt={post.createdAt}
+                />
 
-                    <div className="min-w-0 flex-1">
-                        <PostMeta
-                            subreddit={post.subreddit.name}
-                            author={post.author.username}
-                            createdAt={post.createdAt}
-                        />
+                <h1 className="mt-3 text-2xl/[1.25] font-bold tracking-[-0.015em]">
+                    {post.title}
+                </h1>
 
-                        <h1 className="mt-1 text-[1.375rem]/[1.3] font-semibold tracking-tight">
-                            {post.title}
-                        </h1>
+                <PostBody post={post} className="mt-3" />
 
-                        <PostBody post={post} className="mt-3" />
+                <PostActions
+                    href={href}
+                    commentCount={post.commentCount}
+                    score={post.score}
+                    userVote={post.userVote}
+                    className="mt-4"
+                />
+            </Panel>
 
-                        <PostActions
-                            href={href}
-                            commentCount={post.commentCount}
-                            className="mt-3"
-                        />
-                    </div>
+            <Panel className="mt-4 p-4 sm:p-5">
+                <CommentForm username={null} />
+
+                <div className="my-5 h-px bg-hairline" />
+
+                <PanelHeading>{formatCount(post.commentCount, 'comment', 'comments')}</PanelHeading>
+
+                <div className="mt-2">
+                    <CommentTree comments={MOCK_COMMENTS} opUsername={post.author.username} />
                 </div>
-
-                <Separator />
-
-                <div className="p-3 sm:p-4">
-                    <CommentForm username={null} />
-                </div>
-            </article>
-
-            <section className="mt-3 rounded-lg border border-border bg-card p-3 sm:p-4">
-                <h2 className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                    {formatCount(post.commentCount, 'comment', 'comments')}
-                </h2>
-
-                <Separator className="my-3" />
-
-                <CommentTree comments={MOCK_COMMENTS} opUsername={post.author.username} />
-            </section>
+            </Panel>
         </SiteShell>
     )
 }

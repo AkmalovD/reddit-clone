@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { SiteNav } from '@/components/layout/site-nav'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -7,34 +8,38 @@ type Props = {
     aside?: ReactNode
     /** Full-width band above the columns — a community banner, for instance. */
     banner?: ReactNode
+    /** Hidden on the pages that are a single task, like composing a post. */
+    nav?: boolean
     className?: string
 }
 
 /**
- * 640px feed, 312px sidebar, 24px gap — Reddit's real measurements, so the
- * container is 976px. Everything on a page shares that one number; a banner that
- * runs wider than the columns under it is the kind of misalignment nobody can
- * name but everybody sees.
+ * Three columns: a 240px navigation rail, a 640px feed, a 312px sidebar, 24px
+ * gaps. The rail is pinned to the left edge of a wide container while the feed
+ * and sidebar stay centred as one 976px block — so the reading column sits in
+ * the same place whether or not the rail is on screen.
  */
-export function SiteShell({ children, aside, banner, className }: Props) {
+export function SiteShell({ children, aside, banner, nav = true, className }: Props) {
+    const content = aside ? 'max-w-[976px]' : 'max-w-[40rem]'
+
     return (
-        <div
-            className={cn(
-                'mx-auto w-full px-3 py-4 sm:px-4',
-                aside ? 'max-w-[976px]' : 'max-w-[40rem]',
-                className
-            )}
-        >
-            {banner && <div className="mb-4">{banner}</div>}
+        <div className={cn('mx-auto w-full max-w-[1600px] px-3 py-4 sm:px-4', className)}>
+            <div className="flex gap-6">
+                {nav && <SiteNav className="hidden xl:block" />}
 
-            <div className="lg:grid lg:grid-cols-[minmax(0,40rem)_19.5rem] lg:gap-6">
-                <main className="min-w-0">{children}</main>
+                <div className="min-w-0 flex-1">
+                    {banner && <div className={cn('mx-auto mb-4', content)}>{banner}</div>}
 
-                {aside && (
-                    <aside className="hidden lg:block">
-                        <div className="sticky top-16 space-y-4">{aside}</div>
-                    </aside>
-                )}
+                    <div className={cn('mx-auto flex gap-6', content)}>
+                        <main className="min-w-0 flex-1">{children}</main>
+
+                        {aside && (
+                            <aside className="hidden w-[19.5rem] shrink-0 lg:block">
+                                <div className="sticky top-[4.5rem] space-y-4">{aside}</div>
+                            </aside>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     )

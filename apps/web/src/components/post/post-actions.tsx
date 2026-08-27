@@ -3,22 +3,27 @@
 import Link from 'next/link'
 import { Bookmark, MessageSquare, Share } from 'lucide-react'
 import { toast } from 'sonner'
+import { chip } from '@/components/common/chip'
+import { VoteControl } from '@/components/vote/vote-control'
 import { formatCount } from '@/lib/format'
+import type { VoteValue } from '@/lib/types'
 import { cn } from '@/lib/utils'
-
-const action = cn(
-    'flex items-center gap-1.5 rounded-full px-2 py-1',
-    'text-xs font-bold text-muted-foreground',
-    'transition-colors hover:bg-accent hover:text-foreground'
-)
 
 type Props = {
     href: string
     commentCount: number
+    score: number
+    userVote: VoteValue
     className?: string
 }
 
-export function PostActions({ href, commentCount, className }: Props) {
+/**
+ * The whole verb row, vote included. Voting used to live in a column of its own
+ * beside the post; folding it in here means one row of equally-sized pills, and
+ * the score sits next to the comment count where the two numbers can be read
+ * against each other.
+ */
+export function PostActions({ href, commentCount, score, userVote, className }: Props) {
     async function share() {
         const url = new URL(href, window.location.origin).toString()
 
@@ -33,13 +38,15 @@ export function PostActions({ href, commentCount, className }: Props) {
     }
 
     return (
-        <div className={cn('-ml-2 flex flex-wrap items-center gap-1', className)}>
-            <Link href={href} className={action}>
+        <div className={cn('flex flex-wrap items-center gap-1', className)}>
+            <VoteControl score={score} userVote={userVote} />
+
+            <Link href={href} className={chip}>
                 <MessageSquare className="size-4" aria-hidden="true" />
                 {formatCount(commentCount, 'comment', 'comments')}
             </Link>
 
-            <button type="button" onClick={share} className={action}>
+            <button type="button" onClick={share} className={chip}>
                 <Share className="size-4" aria-hidden="true" />
                 Share
             </button>
@@ -47,7 +54,7 @@ export function PostActions({ href, commentCount, className }: Props) {
             <button
                 type="button"
                 onClick={() => toast('Saved to your profile')}
-                className={action}
+                className={chip}
             >
                 <Bookmark className="size-4" aria-hidden="true" />
                 Save

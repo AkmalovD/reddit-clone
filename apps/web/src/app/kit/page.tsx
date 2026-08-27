@@ -3,6 +3,7 @@ import { Inbox } from 'lucide-react'
 import { CommentForm } from '@/components/comment/comment-form'
 import { CommentTree } from '@/components/comment/comment-tree'
 import { CommentSkeleton } from '@/components/comment/comment-skeleton'
+import { chip } from '@/components/common/chip'
 import { SortBar } from '@/components/common/sort-bar'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { ErrorStateDemo } from './demos'
@@ -42,14 +43,14 @@ function Section({ title, note, children }: { title: string; note?: string; chil
                 <h2 className="text-base font-bold">{title}</h2>
                 {note && <p className="font-body text-sm text-muted-foreground">{note}</p>}
             </div>
-            <div className="rounded-lg border border-border bg-card p-4">{children}</div>
+            <div className="rounded-2xl bg-card p-4">{children}</div>
         </section>
     )
 }
 
 export default function KitPage() {
     return (
-        <main className="mx-auto w-full max-w-3xl space-y-8 px-4 py-8">
+        <main className="mx-auto w-full max-w-3xl space-y-10 px-4 py-10">
             <header>
                 <h1 className="text-2xl font-bold tracking-tight">Design kit</h1>
                 <p className="mt-1 font-body text-sm text-muted-foreground">
@@ -66,7 +67,7 @@ export default function KitPage() {
                     {SWATCHES.map(({ name, className }) => (
                         <div key={name} className="space-y-1.5">
                             <div
-                                className={`h-12 rounded-md border border-border ${className}`}
+                                className={`h-12 rounded-xl border border-border ${className}`}
                             />
                             <p className="font-mono text-xs text-muted-foreground">{name}</p>
                         </div>
@@ -80,8 +81,12 @@ export default function KitPage() {
             >
                 <div className="space-y-3">
                     <p className="text-[1.75rem] font-bold tracking-tight">Page heading, 28/700</p>
-                    <p className="text-[1.375rem]/[1.3] font-semibold">Post title, 22/600</p>
-                    <p className="text-[1.125rem]/[1.35] font-medium">Feed title, 18/500</p>
+                    <p className="text-2xl/[1.25] font-bold tracking-[-0.015em]">
+                        Post title, 24/700
+                    </p>
+                    <p className="text-[1.0625rem]/[1.4] font-semibold tracking-[-0.01em]">
+                        Feed title, 17/600
+                    </p>
                     <p className="font-body text-sm/6">
                         Body copy, 14/400 in Noto Sans. Long-form text and 12px metadata want
                         different faces; one face for both is what makes an interface read as
@@ -90,31 +95,26 @@ export default function KitPage() {
                     <p className="text-xs font-medium text-muted-foreground">
                         Metadata, 12/500 · muted foreground
                     </p>
-                    <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                        Section label, 12/700 uppercase
+                    <p className="text-[0.6875rem] font-bold tracking-wider text-muted-foreground uppercase">
+                        Section label, 11/700 uppercase
                     </p>
                     <p className="tnum font-mono text-sm">1234567890 tabular figures</p>
                 </div>
             </Section>
 
-            <Section title="Buttons">
+            <Section
+                title="Buttons"
+                note="Pill by default, 36px tall by default. Sizes sm / default / lg are 32 / 36 / 40."
+            >
                 <div className="flex flex-wrap items-center gap-3">
-                    <Button className="rounded-full font-bold">Primary</Button>
-                    <Button variant="outline" className="rounded-full font-bold">
-                        Outline
-                    </Button>
-                    <Button variant="ghost" className="rounded-full font-bold">
-                        Ghost
-                    </Button>
-                    <Button variant="destructive" className="rounded-full font-bold">
-                        Destructive
-                    </Button>
-                    <Button disabled className="rounded-full font-bold">
-                        Disabled
-                    </Button>
-                    <Button size="sm" className="rounded-full font-bold">
-                        Small
-                    </Button>
+                    <Button>Primary</Button>
+                    <Button variant="outline">Outline</Button>
+                    <Button variant="ghost">Ghost</Button>
+                    <Button variant="secondary">Secondary</Button>
+                    <Button variant="destructive">Destructive</Button>
+                    <Button disabled>Disabled</Button>
+                    <Button size="sm">Small</Button>
+                    <Button size="lg">Large</Button>
                     <JoinButton initialJoined={false} />
                     <JoinButton initialJoined />
                     <Badge>Badge</Badge>
@@ -125,29 +125,40 @@ export default function KitPage() {
             </Section>
 
             <Section
+                title="Action chips"
+                note="Transparent at rest, filled on hover. The one shape for every secondary verb."
+            >
+                <div className="flex flex-wrap items-center gap-1">
+                    <span className={chip}>Comment</span>
+                    <span className={chip}>Share</span>
+                    <span className={chip}>Save</span>
+                </div>
+            </Section>
+
+            <Section
                 title="Vote control"
-                note="The signature element. Rail beside a post, inline in a comment row. Click to see the optimistic update."
+                note="One horizontal pill everywhere — feed, post, comment. Click to see the optimistic update."
             >
                 <div className="flex flex-wrap items-center gap-8">
                     <div className="space-y-2 text-center">
-                        <VoteControl score={3412} userVote={0} variant="rail" />
-                        <p className="font-mono text-xs text-muted-foreground">rail · none</p>
+                        <VoteControl score={3412} userVote={0} />
+                        <p className="font-mono text-xs text-muted-foreground">none</p>
                     </div>
                     <div className="space-y-2 text-center">
-                        <VoteControl score={3413} userVote={1} variant="rail" />
-                        <p className="font-mono text-xs text-muted-foreground">rail · up</p>
+                        <VoteControl score={3413} userVote={1} />
+                        <p className="font-mono text-xs text-muted-foreground">up</p>
                     </div>
                     <div className="space-y-2 text-center">
-                        <VoteControl score={3411} userVote={-1} variant="rail" />
-                        <p className="font-mono text-xs text-muted-foreground">rail · down</p>
+                        <VoteControl score={3411} userVote={-1} />
+                        <p className="font-mono text-xs text-muted-foreground">down</p>
                     </div>
                     <div className="space-y-2 text-center">
-                        <VoteControl score={-14} userVote={0} variant="rail" />
-                        <p className="font-mono text-xs text-muted-foreground">rail · negative</p>
+                        <VoteControl score={-14} userVote={0} />
+                        <p className="font-mono text-xs text-muted-foreground">negative</p>
                     </div>
                     <div className="space-y-2 text-center">
-                        <VoteControl score={486} userVote={1} variant="inline" />
-                        <p className="font-mono text-xs text-muted-foreground">inline</p>
+                        <VoteControl score={486} userVote={1} size="sm" />
+                        <p className="font-mono text-xs text-muted-foreground">sm · comment row</p>
                     </div>
                 </div>
             </Section>
@@ -178,8 +189,11 @@ export default function KitPage() {
                 </div>
             </Section>
 
-            <Section title="Post card" note="Text post, link post, and a post with a negative score.">
-                <div className="space-y-3">
+            <Section
+                title="Post row"
+                note="Text post, link post, and a post with a negative score — parted by hairlines on one surface."
+            >
+                <div className="-mx-4 divide-y divide-hairline">
                     <PostCard post={MOCK_FEED_POSTS[0]} />
                     <PostCard post={MOCK_FEED_POSTS[1]} />
                     <PostCard post={MOCK_FEED_POSTS[6]} />
@@ -210,7 +224,7 @@ export default function KitPage() {
                         icon={<Inbox />}
                         title="Nothing here yet"
                         description="This community has no posts. Yours would be the first."
-                        action={<Button className="rounded-full font-bold">Create post</Button>}
+                        action={<Button>Create post</Button>}
                     />
                     <ErrorStateDemo />
                 </div>

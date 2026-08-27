@@ -25,11 +25,11 @@ export function UserMenu({ username, onLogout }: Props) {
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="h-9 gap-2 rounded-full px-1.5 sm:pr-3"
+                    className="h-10 gap-2 px-1 sm:pr-3"
                     aria-label={`Account menu for u/${username}`}
                 >
-                    <Avatar className="size-6">
-                        <AvatarFallback className="bg-muted text-[0.625rem] font-bold">
+                    <Avatar className="size-8">
+                        <AvatarFallback className="bg-muted text-xs font-bold">
                             {username.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                     </Avatar>
@@ -42,7 +42,7 @@ export function UserMenu({ username, onLogout }: Props) {
             <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel className="font-normal text-muted-foreground">
                     Signed in as{' '}
-                    <span className="font-bold text-foreground">u/{username}</span>
+                    <span className="font-semibold text-foreground">u/{username}</span>
                 </DropdownMenuLabel>
 
                 <DropdownMenuSeparator />

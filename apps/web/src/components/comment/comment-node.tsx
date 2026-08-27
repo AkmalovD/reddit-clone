@@ -1,20 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageSquare, Share } from 'lucide-react'
+import { MessageSquare, Plus, Share } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { chip } from '@/components/common/chip'
 import { RelativeTime } from '@/components/common/relative-time'
 import { VoteControl } from '@/components/vote/vote-control'
-import { formatCount, formatScore } from '@/lib/format'
+import { formatScore } from '@/lib/format'
 import type { CommentNode } from '@/lib/types'
 import { cn } from '@/lib/utils'
-
-const action = cn(
-    'flex items-center gap-1.5 rounded-full px-2 py-1',
-    'text-xs font-bold text-muted-foreground',
-    'transition-colors hover:bg-accent hover:text-foreground'
-)
 
 /** Counts a node and everything under it, for the collapsed summary. */
 function countDescendants(comment: CommentNode): number {
@@ -34,29 +29,34 @@ export function CommentThreadNode({ comment, opUsername }: Props) {
     const isOp = !deleted && comment.author?.username === opUsername
     const hidden = countDescendants(comment)
 
+    const avatar = (
+        <Avatar className="size-6 shrink-0">
+            <AvatarFallback className="bg-muted text-[0.625rem] font-bold">
+                {deleted ? '?' : comment.author?.username.slice(0, 2).toUpperCase()}
+            </AvatarFallback>
+        </Avatar>
+    )
+
+    /* The score has moved out of the byline and into the vote pill below, where
+       the arrows that change it live. It was in both places, and the two could
+       disagree the moment someone voted. */
     const byline = (
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
             {deleted ? (
-                <span className="font-bold text-muted-foreground italic">[deleted]</span>
+                <span className="font-semibold text-muted-foreground italic">[deleted]</span>
             ) : (
-                <span className="font-bold">u/{comment.author?.username}</span>
+                <span className="font-semibold">u/{comment.author?.username}</span>
             )}
 
             {isOp && (
                 <Badge
                     variant="outline"
-                    className="h-4 rounded-full border-link px-1.5 text-[0.625rem] font-bold text-link"
+                    className="h-4 border-link px-1.5 text-[0.625rem] font-bold text-link"
                 >
                     OP
                 </Badge>
             )}
 
-            <span aria-hidden="true" className="text-muted-foreground">
-                ·
-            </span>
-            <span className="tnum text-muted-foreground">
-                {formatCount(comment.score, 'point', 'points')}
-            </span>
             <span aria-hidden="true" className="text-muted-foreground">
                 ·
             </span>
@@ -70,15 +70,16 @@ export function CommentThreadNode({ comment, opUsername }: Props) {
                 <button
                     type="button"
                     onClick={() => setCollapsed(false)}
-                    className="flex w-full items-center gap-2 rounded-md py-1 text-left hover:bg-accent"
+                    className="flex w-full items-center gap-2 rounded-lg px-1 py-1.5 text-left transition-colors hover:bg-accent"
                 >
-                    <span className="tnum grid size-5 shrink-0 place-items-center rounded border border-border text-xs font-bold text-muted-foreground">
-                        +
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground">
+                        <Plus className="size-3.5" aria-hidden="true" />
                     </span>
+                    {avatar}
                     {byline}
                     {hidden > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                            ({formatScore(hidden)} hidden)
+                        <span className="tnum text-xs text-muted-foreground">
+                            {formatScore(hidden)} hidden
                         </span>
                     )}
                 </button>
@@ -90,11 +91,7 @@ export function CommentThreadNode({ comment, opUsername }: Props) {
         <div className="py-1">
             <div className="flex gap-2">
                 <div className="flex flex-col items-center">
-                    <Avatar className="size-6 shrink-0">
-                        <AvatarFallback className="bg-muted text-[0.625rem] font-bold">
-                            {deleted ? '?' : comment.author?.username.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                    </Avatar>
+                    {avatar}
 
                     {/* The thread line doubles as the collapse control — the same
                         affordance Reddit uses, and the largest hit area in the row. */}
@@ -104,7 +101,7 @@ export function CommentThreadNode({ comment, opUsername }: Props) {
                         aria-label="Collapse thread"
                         className="group mt-1 flex w-6 flex-1 justify-center"
                     >
-                        <span className="w-px self-stretch bg-border transition-colors group-hover:bg-muted-foreground" />
+                        <span className="w-0.5 self-stretch rounded-full bg-hairline transition-colors group-hover:bg-muted-foreground" />
                     </button>
                 </div>
 
@@ -122,18 +119,13 @@ export function CommentThreadNode({ comment, opUsername }: Props) {
 
                     {/* Wraps: at depth 3 on a 360px screen the indentation leaves this row
                         too little width, and without wrapping it pushes the page sideways. */}
-                    <div className="-ml-1 mt-1 flex flex-wrap items-center gap-1">
-                        <VoteControl
-                            score={comment.score}
-                            userVote={0}
-                            variant="inline"
-                            className="scale-90"
-                        />
-                        <button type="button" className={action}>
+                    <div className="mt-1 flex flex-wrap items-center gap-1">
+                        <VoteControl score={comment.score} userVote={0} size="sm" />
+                        <button type="button" className={chip}>
                             <MessageSquare className="size-4" aria-hidden="true" />
                             Reply
                         </button>
-                        <button type="button" className={action}>
+                        <button type="button" className={chip}>
                             <Share className="size-4" aria-hidden="true" />
                             Share
                         </button>

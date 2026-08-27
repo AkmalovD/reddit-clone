@@ -16,14 +16,14 @@ type Props = {
  */
 export function AuthCard({ title, description, children, footer }: Props) {
     return (
-        <main className="mx-auto flex w-full max-w-sm flex-col px-4 py-10 sm:py-16">
-            <div className="rounded-lg border border-border bg-card p-6">
-                <LogoMark className="size-8" />
+        <main className="mx-auto flex w-full max-w-md flex-col px-4 py-10 sm:py-20">
+            <div className="rounded-2xl bg-card p-6 sm:p-8">
+                <LogoMark className="size-9" />
 
-                <h1 className="mt-4 text-2xl font-bold tracking-tight">{title}</h1>
-                <p className="mt-1 font-body text-sm text-muted-foreground">{description}</p>
+                <h1 className="mt-5 text-2xl font-bold tracking-tight">{title}</h1>
+                <p className="mt-1.5 font-body text-sm text-muted-foreground">{description}</p>
 
-                <div className="mt-6">{children}</div>
+                <div className="mt-7">{children}</div>
             </div>
 
             <p className="mt-4 text-center text-sm text-muted-foreground">

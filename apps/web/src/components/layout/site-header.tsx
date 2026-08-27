@@ -27,26 +27,24 @@ export async function SiteHeader() {
     const user = await currentUserOrNull()
 
     return (
-        <header className="sticky top-0 z-50 border-b border-border bg-card">
-            <div className="mx-auto flex h-12 max-w-[1400px] items-center gap-3 px-3 sm:px-4">
-                <Logo />
+        <header className="sticky top-0 z-50 border-b border-hairline bg-card">
+            <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-2 px-3 sm:gap-4 sm:px-4">
+                <Logo className="shrink-0" />
 
-                <SearchField className="mx-auto hidden max-w-md flex-1 sm:block" />
+                {/* The search box is the widest thing in the header on purpose: it is
+                    the only control here that people arrive intending to use. */}
+                <SearchField className="mx-auto hidden w-full max-w-[30rem] sm:block" />
 
                 <div className="ml-auto flex items-center gap-1 sm:ml-0">
                     <ThemeToggle />
 
                     {user ? (
                         <>
-                            <Button
-                                asChild
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Create post"
-                                className="rounded-full"
-                            >
+                            <Button asChild variant="ghost" className="gap-1.5 px-3">
                                 <Link href="/submit">
                                     <Plus className="size-5" aria-hidden="true" />
+                                    <span className="hidden md:inline">Create</span>
+                                    <span className="sr-only md:hidden">Create post</span>
                                 </Link>
                             </Button>
 
@@ -54,15 +52,10 @@ export async function SiteHeader() {
                         </>
                     ) : (
                         <>
-                            <Button
-                                asChild
-                                variant="ghost"
-                                size="sm"
-                                className="rounded-full font-bold"
-                            >
+                            <Button asChild variant="ghost">
                                 <Link href="/login">Log in</Link>
                             </Button>
-                            <Button asChild size="sm" className="rounded-full font-bold">
+                            <Button asChild>
                                 <Link href="/register">Sign up</Link>
                             </Button>
                         </>

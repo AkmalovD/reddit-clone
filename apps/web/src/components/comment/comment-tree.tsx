@@ -15,7 +15,7 @@ export function CommentTree({ comments, opUsername }: Props) {
                 icon={<MessageSquare />}
                 title="No comments yet"
                 description="Start the discussion. The first comment usually sets the tone."
-                className="border-dashed"
+                className="bg-muted py-10"
             />
         )
     }
