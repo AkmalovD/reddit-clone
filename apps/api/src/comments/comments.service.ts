@@ -21,7 +21,7 @@ const COMMENT_FIELDS = {
 
 @Injectable()
 export class CommentsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService) {}
 
     async create(postId: string, dto: CreateCommentDto, userId: string) {
         return this.prisma.$transaction(async (tx) => {
