@@ -28,7 +28,12 @@ export async function SiteHeader() {
 
     return (
         <header className="sticky top-0 z-50 border-b border-hairline bg-card">
-            <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-2 px-3 sm:gap-4 sm:px-4">
+            {/* Full width, and the padding steps to 36px at `xl`. That is where the
+                first icon in the navigation rail lands — 16px margin, 8px of panel
+                padding, 12px of row padding — so the logo sits directly above it
+                rather than adrift of it. Below `xl` there is no rail, and the header
+                lines up with the content column instead. */}
+            <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-4 xl:px-9">
                 <Logo className="shrink-0" />
 
                 {/* The search box is the widest thing in the header on purpose: it is
