@@ -9,18 +9,9 @@ import { ListPostsDto } from "./dto/lists-post.dto";
 import { decodeCursor, encodeCursor } from "./feed-cursor";
 import type { FeedCursor } from "./feed-cursor";
 import { UpdatePostDto } from "./dto/update-post.dto";
+import { attachUserVotes, POST_LIST_FIELDS } from "./post-fields";
+import type { FeedRow } from "./post-fields";
 
-const POST_LIST_FIELDS = {
-    id: true,
-    type: true,
-    title: true,
-    url: true,
-    score: true,
-    commentCount: true,
-    createdAt: true,
-    author: { select: { id: true, username: true } },
-    subreddit: { select: { name: true } }
-} satisfies Prisma.PostSelect
 
 // три сортировки — три индекса, ни одной сортировки в памяти
 const ORDER_BY = {
@@ -40,8 +31,6 @@ const SORT_SQL = {
     new: { column: Prisma.sql`created_at`, cast: Prisma.sql`timestamptz` },
     top: { column: Prisma.sql`score`, cast: Prisma.sql`int` }
 } satisfies Record<Sort, { column: Prisma.Sql; cast: Prisma.Sql }>
-
-type FeedRow = Prisma.PostGetPayload<{ select: typeof POST_LIST_FIELDS }>
 
 type FeedPage = {
     items: FeedRow[]
@@ -92,7 +81,7 @@ export class PostsService {
             this.queryFeed(name, sort, query.cursor, limit)
         )
 
-        return this.attachUserVotes(page, userId)
+        return attachUserVotes(this.prisma, page, userId)
     }
 
     async homeFeed(query: ListPostsDto, userId?: string) {
@@ -178,7 +167,9 @@ export class PostsService {
         const hasMore = rows.length > limit
         const page = hasMore ? rows.slice(0, limit) : rows
 
-        if (page.length === 0) return this.attachUserVotes({ items: [], nextCursor: null })
+        if (page.length === 0) {
+            return attachUserVotes(this.prisma, { items: [], nextCursor: null }, userId)
+        }
 
         const posts = await this.prisma.post.findMany({
             where: { id: { in: page.map((row) => row.id) } },
@@ -194,7 +185,8 @@ export class PostsService {
 
         const last = page[page.length - 1]
 
-        return this.attachUserVotes(
+        return attachUserVotes(
+            this.prisma,
             {
                 items,
                 nextCursor: hasMore ? encodeCursor(last.sort_value, last.id) : null
@@ -230,27 +222,6 @@ export class PostsService {
         return {
             items,
             nextCursor: hasMore ? items[items.length - 1].id : null
-        }
-    }
-
-    private async attachUserVotes(page: FeedPage, userId?: string) {
-        if (!userId || page.items.length === 0) {
-            return {
-                items: page.items.map((p) => ({ ...p, userVote: 0 })),
-                nextCursor: page.nextCursor
-            }
-        }
-
-        const votes = await this.prisma.postVote.findMany({
-            where: { userId, postId: { in: page.items.map((p) => p.id) } },
-            select: { postId: true, value: true }
-        })
-
-        const byPost = new Map(votes.map((v) => [v.postId, v.value]))
-
-        return {
-            items: page.items.map((p) => ({ ...p, userVote: byPost.get(p.id) ?? 0 })),
-            nextCursor: page.nextCursor
         }
     }
 
@@ -307,9 +278,6 @@ export class PostsService {
             data: { deletedAt: new Date() }
         })
 
-        // Сбрасываем всегда, а не только для модератора. Автор, удаливший пост
-        // и увидевший его на странице сообщества, тоже считает это поломкой —
-        // а цена ровно один SCAN на удаление, которое случается редко.
         await this.invalidateFeed(post.subreddit.name)
 
         return { deleted: true }

@@ -9,6 +9,7 @@ import { SubredditsModule } from "./subreddits/subreddits.module";
 import { PostsModule } from "./posts/posts.module";
 import { CommentsModule } from "./comments/comments.module";
 import { VotesModule } from "./votes/votes.module";
+import { SearchModule } from "./search/search.module";
 import { APP_GUARD } from "@nestjs/core";
 import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 
@@ -26,7 +27,8 @@ import { RateLimitGuard } from "./common/guards/rate-limit.guard";
     SubredditsModule,
     PostsModule,
     CommentsModule,
-    VotesModule
+    VotesModule,
+    SearchModule
   ],
   providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }]
 })
