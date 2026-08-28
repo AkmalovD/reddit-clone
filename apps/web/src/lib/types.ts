@@ -33,6 +33,7 @@ export type CommentNode = {
     confidence: number
     author: Author | null      // null у удалённых
     replies: CommentNode[]
+    userVote: VoteValue
 }
 
 export type Subreddit = {

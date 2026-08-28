@@ -120,7 +120,7 @@ export function CommentThreadNode({ comment, opUsername }: Props) {
                     {/* Wraps: at depth 3 on a 360px screen the indentation leaves this row
                         too little width, and without wrapping it pushes the page sideways. */}
                     <div className="mt-1 flex flex-wrap items-center gap-1">
-                        <VoteControl score={comment.score} userVote={0} size="sm" />
+                        <VoteControl score={comment.score} userVote={comment.userVote} size="sm" />
                         <button type="button" className={chip}>
                             <MessageSquare className="size-4" aria-hidden="true" />
                             Reply
