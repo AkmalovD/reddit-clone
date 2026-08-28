@@ -3,21 +3,13 @@ import { JoinButton } from '@/components/subreddit/join-button'
 import { formatCount } from '@/lib/format'
 import type { Subreddit } from '@/lib/types'
 
-/**
- * A flat brand band, no gradient and no image. The band is the only place the
- * brand colour covers a large area, which is what makes the vote arrows read as
- * accents rather than decoration.
- *
- * The name sits below the band rather than on it. Text over a 3.17:1 fill is the
- * kind of thing that looks fine in a mock and is unreadable on a real screen.
- */
-export function SubredditBanner({
-    subreddit,
-    joined
-}: {
+type Props = {
     subreddit: Subreddit
     joined: boolean
-}) {
+    signedIn: boolean
+}
+
+export function SubredditBanner({ subreddit, joined, signedIn }: Props) {
     return (
         <section className="overflow-hidden rounded-2xl bg-card">
             <div className="h-20 bg-brand sm:h-28" />
@@ -37,7 +29,11 @@ export function SubredditBanner({
                     </p>
                 </div>
 
-                <JoinButton initialJoined={joined} />
+                <JoinButton
+                    name={subreddit.name}
+                    initialJoined={joined}
+                    signedIn={signedIn}
+                />
             </div>
         </section>
     )

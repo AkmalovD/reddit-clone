@@ -1,29 +1,40 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { createComment } from '@/app/actions'
 import { FieldError } from '@/components/feedback/field-error'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 
-const MAX_LENGTH = 10_000
+const MAX_LENGTH = 1000
 
 type Props = {
-    /** Null when signed out — the form becomes a prompt to sign in. */
+    postId: string
     username: string | null
+    parentId?: string
     placeholder?: string
-    onSubmit?: (body: string) => Promise<void>
+    autoFocus?: boolean
+    onDone?: () => void
+    onCancel?: () => void
     className?: string
 }
 
 export function CommentForm({
+    postId,
     username,
+    parentId,
     placeholder = 'What are your thoughts?',
-    onSubmit,
+    autoFocus = false,
+    onDone,
+    onCancel,
     className
 }: Props) {
+    const router = useRouter()
     const [body, setBody] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [pending, setPending] = useState(false)
@@ -70,33 +81,59 @@ export function CommentForm({
         setError(null)
         setPending(true)
 
-        try {
-            await onSubmit?.(trimmed)
-            setBody('')
-        } finally {
-            setPending(false)
+        const result = await createComment(postId, trimmed, parentId)
+
+        setPending(false)
+
+        if (!result.ok) {
+            setError(result.message)
+            return
         }
+
+        setBody('')
+        toast.success('Comment posted')
+        onDone?.()
+        router.refresh()
     }
+
+    const remaining = MAX_LENGTH - body.length
 
     return (
         <form onSubmit={submit} className={cn('space-y-2', className)}>
-            <label htmlFor="comment-body" className="text-xs text-muted-foreground">
+            <label htmlFor={`comment-${parentId ?? 'root'}`} className="text-xs text-muted-foreground">
                 Comment as <span className="font-semibold text-foreground">u/{username}</span>
             </label>
 
             <Textarea
-                id="comment-body"
+                id={`comment-${parentId ?? 'root'}`}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}
                 placeholder={placeholder}
                 rows={4}
+                autoFocus={autoFocus}
+                maxLength={MAX_LENGTH}
                 className="resize-y font-body"
             />
 
             <FieldError>{error}</FieldError>
 
-            <div className="flex justify-end">
-                <Button type="submit" disabled={pending || body.trim().length === 0}>
+            <div className="flex items-center justify-end gap-2">
+                <span
+                    className={cn(
+                        'tnum mr-auto text-xs',
+                        remaining < 50 ? 'text-destructive' : 'text-muted-foreground'
+                    )}
+                >
+                    {remaining}
+                </span>
+
+                {onCancel && (
+                    <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                )}
+
+                <Button type="submit" size="sm" disabled={pending || body.trim().length === 0}>
                     {pending && (
                         <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                     )}

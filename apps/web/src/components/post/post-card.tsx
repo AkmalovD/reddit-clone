@@ -7,12 +7,10 @@ import { cn } from '@/lib/utils'
 
 type Props = {
     post: FeedPost
-    /** Suppressed on a community page, where every post is from that community. */
     showSubreddit?: boolean
     className?: string
 }
 
-/** Strips the scheme and any `www.` so a link post reads `postgresql.org`. */
 function hostOf(url: string): string {
     try {
         return new URL(url).hostname.replace(/^www\./, '')
@@ -21,15 +19,6 @@ function hostOf(url: string): string {
     }
 }
 
-/**
- * A row, not a card. Posts used to be separate bordered boxes on the canvas,
- * which drew a rectangle around every one of them and left the feed reading as a
- * stack of unrelated objects. They now share one surface and are parted by a
- * hairline, so the feed is a single thing you scan — and the only rectangles left
- * on screen are the ones that mean something.
- *
- * Everything lines up on one left margin: avatar, title, vote pill.
- */
 export function PostCard({ post, showSubreddit = true, className }: Props) {
     const href = `/g/${post.subreddit.name}/comments/${post.id}`
 
@@ -37,7 +26,7 @@ export function PostCard({ post, showSubreddit = true, className }: Props) {
         <article className={cn('px-3 py-3 sm:px-4', className)}>
             <PostMeta
                 subreddit={post.subreddit.name}
-                author={post.author.username}
+                author={post.author?.username ?? null}
                 createdAt={post.createdAt}
                 showSubreddit={showSubreddit}
             />
@@ -65,6 +54,7 @@ export function PostCard({ post, showSubreddit = true, className }: Props) {
             )}
 
             <PostActions
+                postId={post.id}
                 href={href}
                 commentCount={post.commentCount}
                 score={post.score}

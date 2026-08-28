@@ -10,7 +10,7 @@ export class ApiError extends Error {
     }
 }
 
-type ApiOptions = Omit<RequestInit, 'body'> & {
+export type ApiOptions = Omit<RequestInit, 'body'> & {
     token?: string | null
     body?: unknown
 }
@@ -35,4 +35,18 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     if (res.status === 204) return null as T
 
     return (await res.json()) as T
+}
+
+export function query(params: Record<string, string | number | null | undefined>): string {
+    const search = new URLSearchParams()
+
+    for (const [key, value] of Object.entries(params)) {
+        if (value !== null && value !== undefined && value !== '') {
+            search.set(key, String(value))
+        }
+    }
+
+    const encoded = search.toString()
+
+    return encoded ? `?${encoded}` : ''
 }

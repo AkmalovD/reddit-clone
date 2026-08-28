@@ -5,10 +5,12 @@ import type { CommentNode } from '@/lib/types'
 
 type Props = {
     comments: CommentNode[]
+    postId: string
+    currentUsername: string | null
     opUsername?: string
 }
 
-export function CommentTree({ comments, opUsername }: Props) {
+export function CommentTree({ comments, postId, currentUsername, opUsername }: Props) {
     if (comments.length === 0) {
         return (
             <EmptyState
@@ -23,7 +25,13 @@ export function CommentTree({ comments, opUsername }: Props) {
     return (
         <div className="divide-y divide-hairline">
             {comments.map((comment) => (
-                <CommentThreadNode key={comment.id} comment={comment} opUsername={opUsername} />
+                <CommentThreadNode
+                    key={comment.id}
+                    comment={comment}
+                    postId={postId}
+                    currentUsername={currentUsername}
+                    opUsername={opUsername}
+                />
             ))}
         </div>
     )

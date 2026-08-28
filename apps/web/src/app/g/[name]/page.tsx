@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { SortBar } from '@/components/common/sort-bar'
 import { SiteShell } from '@/components/layout/site-shell'
 import { PostList } from '@/components/post/post-list'
 import { AboutCard } from '@/components/subreddit/about-card'
 import { SubredditBanner } from '@/components/subreddit/subreddit-banner'
-import { MOCK_FEED_POSTS, MOCK_SUBREDDIT } from '@/lib/mock'
+import { query } from '@/lib/api'
+import { getCurrentUser } from '@/lib/auth'
+import { getSubreddit } from '@/lib/communities'
+import { fetchFeed } from '@/lib/feed'
 import type { Sort } from '@/lib/types'
 
 const SORTS: Sort[] = ['hot', 'new', 'top']
@@ -25,25 +29,50 @@ export default async function SubredditPage({
     searchParams
 }: {
     params: Promise<Params>
-    searchParams: Promise<{ sort?: string }>
+    searchParams: Promise<{ sort?: string; cursor?: string }>
 }) {
     const { name } = await params
-    const { sort } = await searchParams
+    const { sort, cursor } = await searchParams
     const active: Sort = SORTS.includes(sort as Sort) ? (sort as Sort) : 'hot'
 
-    const subreddit = { ...MOCK_SUBREDDIT, name }
-    const posts = MOCK_FEED_POSTS.filter((post) => post.subreddit.name === 'programming')
+    const [user, subreddit] = await Promise.all([getCurrentUser(), getSubreddit(name)])
+
+    if (!subreddit) notFound()
+
+    const feed = await fetchFeed(
+        `/subreddits/${encodeURIComponent(name)}/posts`,
+        active,
+        cursor
+    )
+
+    const base = `/g/${subreddit.name}`
 
     return (
         <SiteShell
-            banner={<SubredditBanner subreddit={subreddit} joined={false} />}
+            banner={
+                <SubredditBanner
+                    subreddit={subreddit}
+                    joined={false}
+                    signedIn={user !== null}
+                />
+            }
             aside={<AboutCard subreddit={subreddit} />}
         >
-            <SortBar basePath={`/g/${name}`} active={active} />
+            <SortBar basePath={base} active={active} />
             <PostList
-                posts={posts}
+                posts={feed.items}
                 showSubreddit={false}
-                emptyAction={{ href: `/submit?g=${name}`, label: 'Create post' }}
+                moreHref={
+                    feed.nextCursor
+                        ? `${base}${query({ sort: active === 'hot' ? null : active, cursor: feed.nextCursor })}`
+                        : null
+                }
+                emptyDescription={`g/${subreddit.name} has no posts. Yours would be the first.`}
+                emptyAction={
+                    user
+                        ? { href: `/submit?g=${subreddit.name}`, label: 'Create post' }
+                        : undefined
+                }
             />
         </SiteShell>
     )

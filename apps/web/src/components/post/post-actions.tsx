@@ -1,29 +1,45 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import Link from 'next/link'
-import { Bookmark, MessageSquare, Share } from 'lucide-react'
+import { MessageSquare, Share } from 'lucide-react'
 import { toast } from 'sonner'
+import { voteOnPost } from '@/app/actions'
 import { chip } from '@/components/common/chip'
+import { SaveButton } from '@/components/post/save-button'
 import { VoteControl } from '@/components/vote/vote-control'
 import { formatCount } from '@/lib/format'
 import type { VoteValue } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 type Props = {
+    postId: string
     href: string
     commentCount: number
     score: number
     userVote: VoteValue
+    children?: ReactNode
     className?: string
 }
 
-/**
- * The whole verb row, vote included. Voting used to live in a column of its own
- * beside the post; folding it in here means one row of equally-sized pills, and
- * the score sits next to the comment count where the two numbers can be read
- * against each other.
- */
-export function PostActions({ href, commentCount, score, userVote, className }: Props) {
+export function PostActions({
+    postId,
+    href,
+    commentCount,
+    score,
+    userVote,
+    children,
+    className
+}: Props) {
+    async function vote(value: VoteValue) {
+        const result = await voteOnPost(postId, value)
+
+        if (!result.ok) {
+            toast.error(result.message)
+            throw new Error(result.message)
+        }
+    }
+
     async function share() {
         const url = new URL(href, window.location.origin).toString()
 
@@ -31,15 +47,13 @@ export function PostActions({ href, commentCount, score, userVote, className }: 
             await navigator.clipboard.writeText(url)
             toast.success('Link copied')
         } catch {
-            // Clipboard access is denied in some browsers outside a secure context.
-            // Say what to do instead of apologising for it.
             toast.error('Copy the link from the address bar')
         }
     }
 
     return (
         <div className={cn('flex flex-wrap items-center gap-1', className)}>
-            <VoteControl score={score} userVote={userVote} />
+            <VoteControl score={score} userVote={userVote} onVote={vote} />
 
             <Link href={href} className={chip}>
                 <MessageSquare className="size-4" aria-hidden="true" />
@@ -51,14 +65,9 @@ export function PostActions({ href, commentCount, score, userVote, className }: 
                 Share
             </button>
 
-            <button
-                type="button"
-                onClick={() => toast('Saved to your profile')}
-                className={chip}
-            >
-                <Bookmark className="size-4" aria-hidden="true" />
-                Save
-            </button>
+            <SaveButton postId={postId} />
+
+            {children}
         </div>
     )
 }

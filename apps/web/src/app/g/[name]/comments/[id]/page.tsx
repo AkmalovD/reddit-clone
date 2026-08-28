@@ -1,64 +1,73 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { CommentForm } from '@/components/comment/comment-form'
 import { CommentTree } from '@/components/comment/comment-tree'
 import { Panel, PanelHeading } from '@/components/common/panel'
 import { SiteShell } from '@/components/layout/site-shell'
-import { PostActions } from '@/components/post/post-actions'
-import { PostBody } from '@/components/post/post-body'
-import { PostMeta } from '@/components/post/post-meta'
+import { PostView } from '@/components/post/post-view'
 import { AboutCard } from '@/components/subreddit/about-card'
-import { MOCK_COMMENTS, MOCK_POST, MOCK_SUBREDDIT } from '@/lib/mock'
+import { getCurrentUser } from '@/lib/auth'
+import { getSubreddit } from '@/lib/communities'
 import { formatCount } from '@/lib/format'
+import { serverApiOrNull } from '@/lib/server-api'
+import type { CommentNode, PostDetail } from '@/lib/types'
 
-export const metadata: Metadata = { title: MOCK_POST.title }
+type Params = { name: string; id: string }
 
-export default async function PostPage({
+export async function generateMetadata({
     params
 }: {
-    params: Promise<{ name: string; id: string }>
-}) {
-    const { name } = await params
+    params: Promise<Params>
+}): Promise<Metadata> {
+    const { id } = await params
+    const post = await serverApiOrNull<PostDetail>(`/posts/${id}`)
 
-    const post = MOCK_POST
-    const subreddit = { ...MOCK_SUBREDDIT, name }
+    return { title: post?.title ?? 'Post' }
+}
+
+export default async function PostPage({ params }: { params: Promise<Params> }) {
+    const { name, id } = await params
+
+    const [user, post] = await Promise.all([
+        getCurrentUser(),
+        serverApiOrNull<PostDetail>(`/posts/${id}`)
+    ])
+
+    if (!post) notFound()
+
+    const [subreddit, comments] = await Promise.all([
+        getSubreddit(post.subreddit.name),
+        serverApiOrNull<CommentNode[]>(`/posts/${id}/comments`)
+    ])
+
     const href = `/g/${name}/comments/${post.id}`
 
     return (
-        <SiteShell aside={<AboutCard subreddit={subreddit} />}>
-            {/* The title is the largest thing on the page and starts at the left
-                margin. Nothing sits beside it: the vote column that used to be there
-                indented every line of the post by 44px for the sake of two arrows. */}
+        <SiteShell aside={subreddit ? <AboutCard subreddit={subreddit} /> : undefined}>
             <Panel className="p-4 sm:p-5">
-                <PostMeta
-                    subreddit={post.subreddit.name}
-                    author={post.author.username}
-                    createdAt={post.createdAt}
-                />
-
-                <h1 className="mt-3 text-2xl/[1.25] font-bold tracking-[-0.015em]">
-                    {post.title}
-                </h1>
-
-                <PostBody post={post} className="mt-3" />
-
-                <PostActions
+                <PostView
+                    post={post}
                     href={href}
-                    commentCount={post.commentCount}
-                    score={post.score}
-                    userVote={post.userVote}
-                    className="mt-4"
+                    isAuthor={user !== null && user.username === post.author?.username}
                 />
             </Panel>
 
             <Panel className="mt-4 p-4 sm:p-5">
-                <CommentForm username={null} />
+                <CommentForm postId={post.id} username={user?.username ?? null} />
 
                 <div className="my-5 h-px bg-hairline" />
 
-                <PanelHeading>{formatCount(post.commentCount, 'comment', 'comments')}</PanelHeading>
+                <PanelHeading>
+                    {formatCount(post.commentCount, 'comment', 'comments')}
+                </PanelHeading>
 
                 <div className="mt-2">
-                    <CommentTree comments={MOCK_COMMENTS} opUsername={post.author.username} />
+                    <CommentTree
+                        comments={comments ?? []}
+                        postId={post.id}
+                        currentUsername={user?.username ?? null}
+                        opUsername={post.author?.username}
+                    />
                 </div>
             </Panel>
         </SiteShell>

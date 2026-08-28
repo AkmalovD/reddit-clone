@@ -2,9 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Compass, Home, LayoutGrid, Plus, TrendingUp } from 'lucide-react'
+import { Bookmark, Compass, Home, LayoutGrid, Plus, TrendingUp } from 'lucide-react'
 import { CommunityAvatar } from '@/components/subreddit/community-avatar'
-import { MOCK_COMMUNITIES } from '@/lib/mock'
 import { cn } from '@/lib/utils'
 
 /**
@@ -25,6 +24,7 @@ const FEEDS = [
 
 const GROVE = [
     { href: '/submit', label: 'Create post', icon: Plus },
+    { href: '/saved', label: 'Saved', icon: Bookmark },
     { href: '/kit', label: 'Design kit', icon: LayoutGrid }
 ] as const
 
@@ -41,7 +41,9 @@ function Heading({ children }: { children: React.ReactNode }) {
     )
 }
 
-export function SiteNav({ className }: { className?: string }) {
+type Props = { communities: string[]; className?: string }
+
+export function SiteNav({ communities, className }: Props) {
     const pathname = usePathname()
 
     function state(href: string) {
@@ -80,27 +82,31 @@ export function SiteNav({ className }: { className?: string }) {
 
             <div className="mx-3 mt-2 h-px bg-hairline" />
 
-            <Heading>Communities</Heading>
+            {communities.length > 0 && (
+                <>
+                    <Heading>Communities</Heading>
 
-            <ul>
-                {MOCK_COMMUNITIES.map((community) => {
-                    const href = `/g/${community.name}`
+                    <ul>
+                        {communities.map((name) => {
+                            const href = `/g/${name}`
 
-                    return (
-                        <li key={community.id}>
-                            <Link href={href} {...state(href)}>
-                                <CommunityAvatar
-                                    name={community.name}
-                                    className="size-[1.125rem] text-[0.5625rem]"
-                                />
-                                <span className="truncate">g/{community.name}</span>
-                            </Link>
-                        </li>
-                    )
-                })}
-            </ul>
+                            return (
+                                <li key={name}>
+                                    <Link href={href} {...state(href)}>
+                                        <CommunityAvatar
+                                            name={name}
+                                            className="size-[1.125rem] text-[0.5625rem]"
+                                        />
+                                        <span className="truncate">g/{name}</span>
+                                    </Link>
+                                </li>
+                            )
+                        })}
+                    </ul>
 
-            <div className="mx-3 mt-2 h-px bg-hairline" />
+                    <div className="mx-3 mt-2 h-px bg-hairline" />
+                </>
+            )}
 
             <Heading>Grove</Heading>
 

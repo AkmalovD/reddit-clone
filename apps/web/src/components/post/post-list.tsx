@@ -7,27 +7,27 @@ import type { FeedPost } from '@/lib/types'
 
 type Props = {
     posts: FeedPost[]
-    /** Cursor for the next page; absent means the feed has reached the end. */
-    nextCursor?: string | null
-    /** Where "Load more" points. The cursor is appended as a query parameter. */
-    basePath?: string
+    moreHref?: string | null
     showSubreddit?: boolean
+    emptyTitle?: string
+    emptyDescription?: string
     emptyAction?: { href: string; label: string }
 }
 
 export function PostList({
     posts,
-    nextCursor,
-    basePath,
+    moreHref,
     showSubreddit = true,
+    emptyTitle = 'No posts yet',
+    emptyDescription = 'Nothing has been posted here. Be the first.',
     emptyAction
 }: Props) {
     if (posts.length === 0) {
         return (
             <EmptyState
                 icon={<FileText />}
-                title="No posts yet"
-                description="Nothing has been posted here. Be the first."
+                title={emptyTitle}
+                description={emptyDescription}
                 action={
                     emptyAction && (
                         <Button asChild>
@@ -41,8 +41,6 @@ export function PostList({
 
     return (
         <>
-            {/* One surface, hairline-parted rows. `overflow-hidden` is what keeps the
-                first and last row from squaring off the 16px corners. */}
             <div className="overflow-hidden rounded-2xl bg-card">
                 <div className="divide-y divide-hairline">
                     {posts.map((post) => (
@@ -51,10 +49,10 @@ export function PostList({
                 </div>
             </div>
 
-            {nextCursor && basePath && (
+            {moreHref && (
                 <div className="pt-4 pb-6">
                     <Button asChild variant="outline" size="lg" className="w-full">
-                        <Link href={`${basePath}?cursor=${nextCursor}`}>Load more</Link>
+                        <Link href={moreHref}>Load more</Link>
                     </Button>
                 </div>
             )}

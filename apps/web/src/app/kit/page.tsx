@@ -115,8 +115,8 @@ export default function KitPage() {
                     <Button disabled>Disabled</Button>
                     <Button size="sm">Small</Button>
                     <Button size="lg">Large</Button>
-                    <JoinButton initialJoined={false} />
-                    <JoinButton initialJoined />
+                    <JoinButton name="programming" initialJoined={false} signedIn />
+                    <JoinButton name="programming" initialJoined signedIn />
                     <Badge>Badge</Badge>
                     <Badge variant="outline" className="border-link text-link">
                         OP
@@ -201,13 +201,18 @@ export default function KitPage() {
             </Section>
 
             <Section title="Comments" note="Nested replies, a deleted node, and the OP badge.">
-                <CommentTree comments={MOCK_COMMENTS} opUsername="kmartell" />
+                <CommentTree
+                    comments={MOCK_COMMENTS}
+                    postId={MOCK_FEED_POSTS[0].id}
+                    currentUsername={MOCK_USER.username}
+                    opUsername="kmartell"
+                />
             </Section>
 
             <Section title="Comment form" note="Signed in, and signed out.">
                 <div className="space-y-6">
-                    <CommentForm username={MOCK_USER.username} />
-                    <CommentForm username={null} />
+                    <CommentForm postId={MOCK_FEED_POSTS[0].id} username={MOCK_USER.username} />
+                    <CommentForm postId={MOCK_FEED_POSTS[0].id} username={null} />
                 </div>
             </Section>
 

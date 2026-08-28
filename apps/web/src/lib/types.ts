@@ -12,28 +12,34 @@ export type FeedPost = {
     url: string | null
     score: number
     commentCount: number
-    createdAt: string          // JSON, не Date
-    author: Author
+    createdAt: string
+    author: Author | null
     subreddit: { name: string }
     userVote: VoteValue
 }
 
-export type PostDetail = FeedPost & { body: string | null }
+export type PostDetail = FeedPost & { body: string | null; editedAt?: string | null }
 
 export type Feed = { items: FeedPost[]; nextCursor: string | null }
 
+export type SearchResults = {
+    items: FeedPost[]
+    hasMore: boolean
+    nextOffset: number | null
+}
+
 export type CommentNode = {
     id: string
-    body: string               // '[deleted]' у удалённых
+    body: string
     depth: number
     score: number
     parentId: string | null
     createdAt: string
     updatedAt: string
     confidence: number
-    author: Author | null      // null у удалённых
-    replies: CommentNode[]
     userVote: VoteValue
+    author: Author | null
+    replies: CommentNode[]
 }
 
 export type Subreddit = {
@@ -43,3 +49,7 @@ export type Subreddit = {
     createdAt: string
     _count: { memberships: number; posts: number }
 }
+
+export type ActionResult =
+    | { ok: true }
+    | { ok: false; reason: 'auth' | 'notfound' | 'invalid' | 'error'; message: string }

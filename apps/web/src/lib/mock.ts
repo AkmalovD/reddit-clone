@@ -178,6 +178,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
         createdAt: ago(4),
         updatedAt: ago(4),
         confidence: 0.94,
+        userVote: 0,
         author: { id: 'u-9', username: 'index_scan' },
         replies: [
             {
@@ -191,6 +192,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
                 createdAt: ago(3),
                 updatedAt: ago(3),
                 confidence: 0.92,
+                userVote: 0,
                 author: { id: 'u-1', username: 'kmartell' },
                 replies: [
                     {
@@ -202,6 +204,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
                         createdAt: ago(2),
                         updatedAt: ago(2),
                         confidence: 0.71,
+                        userVote: 0,
                         author: { id: 'u-10', username: 'p99_enjoyer' },
                         replies: [
                             {
@@ -215,6 +218,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
                                 createdAt: ago(2),
                                 updatedAt: ago(2),
                                 confidence: 0.83,
+                                userVote: 0,
                                 author: { id: 'u-1', username: 'kmartell' },
                                 replies: []
                             }
@@ -231,6 +235,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
                 createdAt: ago(3),
                 updatedAt: ago(3),
                 confidence: 0.3,
+                userVote: 0,
                 author: null,
                 replies: []
             }
@@ -247,6 +252,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
         createdAt: ago(4),
         updatedAt: ago(4),
         confidence: 0.88,
+        userVote: 0,
         author: { id: 'u-11', username: 'btree_believer' },
         replies: []
     },
@@ -261,6 +267,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
         createdAt: ago(3),
         updatedAt: ago(3),
         confidence: 0.62,
+        userVote: 0,
         author: { id: 'u-12', username: 'scale_first' },
         replies: [
             {
@@ -272,6 +279,7 @@ export const MOCK_COMMENTS: CommentNode[] = [
                 createdAt: ago(3),
                 updatedAt: ago(3),
                 confidence: 0.58,
+                userVote: 0,
                 author: { id: 'u-1', username: 'kmartell' },
                 replies: []
             }

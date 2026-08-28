@@ -1,66 +1,69 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { Search } from 'lucide-react'
 import { EmptyState } from '@/components/feedback/empty-state'
 import { SiteShell } from '@/components/layout/site-shell'
 import { PostList } from '@/components/post/post-list'
-import { Button } from '@/components/ui/button'
+import { query } from '@/lib/api'
 import { formatCount } from '@/lib/format'
-import { MOCK_FEED_POSTS } from '@/lib/mock'
+import { serverApi } from '@/lib/server-api'
+import type { SearchResults } from '@/lib/types'
 
 export const metadata: Metadata = { title: 'Search' }
+
+const PAGE_SIZE = 25
 
 export default async function SearchPage({
     searchParams
 }: {
-    searchParams: Promise<{ q?: string }>
+    searchParams: Promise<{ q?: string; offset?: string }>
 }) {
-    const { q } = await searchParams
-    const query = (q ?? '').trim()
+    const { q, offset } = await searchParams
+    const term = (q ?? '').trim()
+    const start = Math.min(Math.max(Number(offset) || 0, 0), 100)
 
-    const results = query
-        ? MOCK_FEED_POSTS.filter((post) =>
-              post.title.toLowerCase().includes(query.toLowerCase())
-          )
-        : []
-
-    if (!query) {
+    if (term.length < 2) {
         return (
             <SiteShell>
                 <EmptyState
                     icon={<Search />}
                     title="Search Grove"
-                    description="Type in the box at the top to find posts and communities."
+                    description={
+                        term.length === 0
+                            ? 'Type in the box at the top to find posts across every community.'
+                            : 'Search terms need at least two characters.'
+                    }
                 />
             </SiteShell>
         )
     }
 
+    const results = await serverApi<SearchResults>(
+        `/search/posts${query({ q: term, limit: PAGE_SIZE, offset: start })}`
+    )
+
     return (
         <SiteShell>
             <div className="mb-3 px-1">
                 <h1 className="text-xl font-bold tracking-tight">
-                    Results for <span className="text-muted-foreground">{query}</span>
+                    Results for <span className="text-muted-foreground">{term}</span>
                 </h1>
                 <p className="tnum mt-0.5 text-xs text-muted-foreground">
-                    {formatCount(results.length, 'post', 'posts')}
+                    {formatCount(results.items.length, 'post', 'posts')}
+                    {results.hasMore && ' on this page'}
                 </p>
             </div>
 
-            {results.length === 0 ? (
-                <EmptyState
-                    icon={<Search />}
-                    title="No posts matched"
-                    description="Try fewer words, or a different spelling."
-                    action={
-                        <Button asChild variant="outline">
-                            <Link href="/">Back to the feed</Link>
-                        </Button>
-                    }
-                />
-            ) : (
-                <PostList posts={results} />
-            )}
+            <PostList
+                posts={results.items}
+                moreHref={
+                    results.nextOffset !== null
+                        ? `/search${query({ q: term, offset: results.nextOffset })}`
+                        : null
+                }
+                emptyTitle="No posts matched"
+                emptyDescription="Try fewer words, or a different spelling."
+                emptyAction={{ href: '/', label: 'Back to the feed' }}
+            />
         </SiteShell>
     )
 }

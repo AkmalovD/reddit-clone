@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { SiteNav } from '@/components/layout/site-nav'
+import { listCommunityNames } from '@/lib/communities'
 import { cn } from '@/lib/utils'
 
 type Props = {
@@ -10,13 +11,23 @@ type Props = {
     className?: string
 }
 
-export function SiteShell({ children, aside, banner, nav = true, className }: Props) {
+export async function SiteShell({
+    children,
+    aside,
+    banner,
+    nav = true,
+    className
+}: Props) {
     const content = aside ? 'max-w-[1104px]' : 'max-w-[48rem]'
+    const communities = nav ? await listCommunityNames() : []
 
     return (
         <div className={cn('w-full py-4', className)}>
             <div className="flex gap-4">
-                {nav && <SiteNav className="ml-3 hidden xl:block" />}
+                {nav && (
+                    <SiteNav communities={communities} className="ml-3 hidden xl:block" />
+                )}
+
                 <div className="min-w-0 flex-1 px-3 sm:px-4">
                     {banner && <div className={cn('mx-auto mb-4', content)}>{banner}</div>}
 
