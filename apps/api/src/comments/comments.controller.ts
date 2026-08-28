@@ -5,6 +5,8 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { CreateCommentDto } from "./dto/create-comment.dto";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import type { AuthUser } from "../auth/decorators/current-user.decorator";
+import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
+import { ApiOptionalBearerAuth } from "../common/decorators/api-optional-bearer.decorator";
 
 @ApiTags('comments')
 @Controller()
@@ -31,6 +33,8 @@ export class CommentsController {
     }
 
     @Get('posts/:postId/comments')
+    @UseGuards(OptionalJwtAuthGuard)
+    @ApiOptionalBearerAuth()
     @ApiParam({ name: 'postId', example: '019ffedc-3676-7769-b3d3-b91a2612fc1e' })
     @ApiOperation({
         summary: 'Дерево комментариев',
@@ -40,11 +44,16 @@ export class CommentsController {
     })
     @ApiResponse({ status: 200, description: 'Массив корневых узлов с полем replies' })
     @ApiResponse({ status: 404, description: 'Пост не найден' })
-    list(@Param('postId') postId: string) {
-        return this.comments.listByPost(postId)
+    list(
+        @Param('postId') postId: string,
+        @CurrentUser() user: AuthUser | null
+    ) {
+        return this.comments.listByPost(postId, user?.id)
     }
 
     @Get('comments/:id/thread')
+    @UseGuards(OptionalJwtAuthGuard)
+    @ApiOptionalBearerAuth()
     @ApiParam({ name: 'id', example: '01a00faa-61be-7178-aec1-cd386324481c' })
     @ApiOperation({
         summary: 'Поддерево одной ветки',
@@ -52,8 +61,11 @@ export class CommentsController {
     })
     @ApiResponse({ status: 200, description: 'Ветка целиком' })
     @ApiResponse({ status: 404, description: 'Комментарий не найден или удалён' })
-    thread(@Param('id') id: string) {
-        return this.comments.subTree(id)
+    thread(
+        @Param('id') id: string,
+        @CurrentUser() user: AuthUser | null
+    ) {
+        return this.comments.subTree(id, user?.id)
     }
 
     @Delete('comments/:id')

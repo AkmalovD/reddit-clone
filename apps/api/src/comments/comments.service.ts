@@ -79,7 +79,18 @@ export class CommentsService {
         })
     }
 
-    async listByPost(postId: string) {
+    private async userVotes(rows: { id: string }[], userId?: string) {
+        if (!userId || rows.length === 0) return undefined
+
+        const votes = await this.prisma.commentVote.findMany({
+            where: { userId, commentId: { in: rows.map((row) => row.id) } },
+            select: { commentId: true, value: true }
+        })
+
+        return new Map(votes.map((vote) => [vote.commentId, vote.value]))
+    }
+
+    async listByPost(postId: string, userId?: string) {
         const post = await this.prisma.post.findUnique({
             where: { id: postId, deletedAt: null },
             select: { id: true }
@@ -93,10 +104,10 @@ export class CommentsService {
             select: COMMENT_FIELDS
         })
 
-        return buildTree(rows)
+        return buildTree(rows, await this.userVotes(rows, userId))
     }
 
-    async subTree(commentId: string) {
+    async subTree(commentId: string, userId?: string) {
         const root = await this.prisma.comment.findFirst({
             where: { id: commentId, deletedAt: null },
             select: { path: true, postId: true }
@@ -110,7 +121,7 @@ export class CommentsService {
             select: COMMENT_FIELDS
         })
 
-        return buildTree(rows)
+        return buildTree(rows, await this.userVotes(rows, userId))
     }
 
     async remove(commentId: string, userId: string) {

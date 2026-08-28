@@ -12,10 +12,11 @@ export type CommentRow = {
 }
 
 export type CommentNode = Omit<CommentRow, 'deletedAt'> & {
+    userVote: number
     replies: CommentNode[]
 }
 
-export function buildTree(rows: CommentRow[]): CommentNode[] {
+export function buildTree(rows: CommentRow[], votes?: Map<string, number>): CommentNode[] {
     const index = new Map<string, CommentNode>()
     const roots: CommentNode[] = []
 
@@ -26,6 +27,7 @@ export function buildTree(rows: CommentRow[]): CommentNode[] {
             ...rest,
             body: deletedAt ? '[deleted]' : row.body,
             author: deletedAt ? null : row.author,
+            userVote: votes?.get(row.id) ?? 0,
             replies: []
         }
 
