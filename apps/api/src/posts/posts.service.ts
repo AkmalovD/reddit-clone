@@ -11,14 +11,7 @@ import type { FeedCursor } from "./feed-cursor";
 import { UpdatePostDto } from "./dto/update-post.dto";
 import { attachUserVotes, POST_LIST_FIELDS } from "./post-fields";
 import type { FeedRow } from "./post-fields";
-
-
-// три сортировки — три индекса, ни одной сортировки в памяти
-const ORDER_BY = {
-    hot: [{ hotRank: 'desc' }, { id: 'desc' }],
-    new: [{ createdAt: 'desc' }, { id: 'desc' }],
-    top: [{ score: 'desc' }, { id: 'desc' }]
-} satisfies Record<string, Prisma.PostOrderByWithRelationInput[]>
+import { ORDER_BY } from "./post-fields";
 
 const FEED_TTL_SECONDS = 30
 

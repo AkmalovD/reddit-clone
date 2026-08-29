@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from "@nestjs/common";
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { SubredditsService } from "./subreddits.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -6,6 +6,9 @@ import { CreateSubredditDto } from "./dto/create-subreddit.dto";
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import type { AuthUser } from "../auth/decorators/current-user.decorator";
 import { AddModeratorDto } from "./dto/add-moderator.dto";
+import { ListSubredditsDto } from "./dto/list-subreddits.dto";
+import { OptionalJwtAuthGuard } from "../auth/guards/optional-jwt-auth.guard";
+import { ApiOptionalBearerAuth } from "../common/decorators/api-optional-bearer.decorator";
 
 @ApiTags('subreddits')
 @Controller('subreddits')
@@ -25,13 +28,30 @@ export class SubredditsController {
         return this.subreddits.create(dto, user.id)
     }
 
+    @Get()
+    @ApiOperation({
+        summary: 'Список сообществ',
+        description:
+            'Пагинация смещением, а не курсором: сортировка по числу участников ' +
+            'идёт по вычисляемому значению, которого нет в строке.'
+    })
+    @ApiResponse({ status: 200, description: '{ items, hasMore, nextOffset }' })
+    list(@Query() query: ListSubredditsDto) {
+        return this.subreddits.list(query)
+    }
+
     @Get(':name')
+    @UseGuards(OptionalJwtAuthGuard)
+    @ApiOptionalBearerAuth()
     @ApiParam({ name: 'name', example: 'programming' })
-    @ApiOperation({ summary: 'Сообщество с числом участников и постов' })
+    @ApiOperation({
+        summary: 'Сообщество с числом участников и постов',
+        description: 'С токеном добавляет joined и role — членство запрашивающего.'
+    })
     @ApiResponse({ status: 200, description: 'Найдено' })
     @ApiResponse({ status: 404, description: 'Не найдено' })
-    findOne(@Param('name') name: string) {
-        return this.subreddits.findByName(name)
+    findOne(@Param('name') name: string, @CurrentUser() user: AuthUser | null) {
+        return this.subreddits.findByName(name, user?.id)
     }
 
     @Post(':name/join')

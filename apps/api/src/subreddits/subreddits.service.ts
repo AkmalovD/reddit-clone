@@ -5,6 +5,17 @@ import { subscriptionsKey } from "../common/cache-keys";
 import { CreateSubredditDto } from "./dto/create-subreddit.dto";
 import { Prisma } from "../../generated/prisma/client";
 import { AddModeratorDto } from "./dto/add-moderator.dto";
+import { ListSubredditsDto } from "./dto/list-subreddits.dto";
+
+const SUBREDDIT_FIELDS = {
+    id: true,
+    name: true,
+    description: true,
+    createdAt: true,
+    _count: { select: { memberships: true, posts: { where: { deletedAt: null } } } }
+} satisfies Prisma.SubredditSelect
+
+const DIRECTORY_TTL_SECONDS = 60
 
 @Injectable()
 export class SubredditsService {
@@ -37,6 +48,7 @@ export class SubredditsService {
             // создатель попал в участники в той же транзакции — его список
             // подписок изменился, кеш ленты обязан это увидеть
             await this.cache.del(subscriptionsKey(userId))
+            await this.cache.delByPattern('subreddits:*')
 
             return created
         } catch (error) {
@@ -50,21 +62,58 @@ export class SubredditsService {
         }
     }
 
-    async findByName(name: string) {
+    async list(query: ListSubredditsDto) {
+        const sort = query.sort ?? 'popular'
+        const limit = query.limit ?? 25
+        const offset = query.offset ?? 0
+
+        return this.cache.wrap(
+            `subreddits:${sort}:${limit}:${offset}`,
+            DIRECTORY_TTL_SECONDS,
+            async () => {
+                const rows = await this.prisma.subreddit.findMany({
+                    orderBy:
+                        sort === 'popular'
+                            ? [{ memberships: { _count: 'desc' } }, { id: 'desc' }]
+                            : [{ createdAt: 'desc' }, { id: 'desc' }],
+                    take: limit + 1,
+                    skip: offset,
+                    select: SUBREDDIT_FIELDS
+                })
+
+                const hasMore = rows.length > limit
+
+                return {
+                    items: hasMore ? rows.slice(0, limit) : rows,
+                    hasMore,
+                    nextOffset: hasMore ? offset + limit : null
+                }
+            }
+        )
+    }
+
+    async findByName(name: string, viewerId?: string) {
         const subreddit = await this.prisma.subreddit.findUnique({
             where: { name: name.toLowerCase() },
-            select: {
-                id: true,
-                name: true,
-                description: true,
-                createdAt: true,
-                _count: { select: { memberships: true, posts: true } }
-            }
+            select: SUBREDDIT_FIELDS
         })
 
         if (!subreddit) throw new NotFoundException('subreddit not found')
 
-        return subreddit
+        if (!viewerId) return { ...subreddit, joined: false, role: null }
+
+        const membership = await this.prisma.membership.findUnique({
+            where: {
+                userId_subredditId: { userId: viewerId, subredditId: subreddit.id }
+            },
+            select: { role: true }
+        })
+
+        return {
+            ...subreddit,
+            joined: membership !== null,
+            role: membership?.role ?? null
+        }
     }
 
     async join(name: string, userId: string) {

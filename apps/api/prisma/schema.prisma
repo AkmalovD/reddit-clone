@@ -100,6 +100,8 @@ model Post {
   @@index([subredditId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([subredditId, score(sort: Desc), id(sort: Desc)])
 
+  @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
+
   @@index([hotRank(sort: Desc), id(sort: Desc)])
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([score(sort: Desc), id(sort: Desc)])
@@ -132,6 +134,7 @@ model Comment {
 
   @@index([postId, path])
   @@index([parentId])
+  @@index([authorId])
   @@map("comments")
 }
 

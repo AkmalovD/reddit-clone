@@ -13,16 +13,15 @@ export const POST_LIST_FIELDS = {
     subreddit: { select: { name: true } }
 } satisfies Prisma.PostSelect
 
+// три сортировки — три индекса, ни одной сортировки в памяти
+export const ORDER_BY = {
+    hot: [{ hotRank: 'desc' }, { id: 'desc' }],
+    new: [{ createdAt: 'desc' }, { id: 'desc' }],
+    top: [{ score: 'desc' }, { id: 'desc' }]
+} satisfies Record<string, Prisma.PostOrderByWithRelationInput[]>
 
 export type FeedRow = Prisma.PostGetPayload<{ select: typeof POST_LIST_FIELDS }>
 
-/**
- * Персональная часть страницы — одним запросом на всю выдачу, а не по посту.
- *
- * Обобщение по всей странице целиком, а не по «остальным полям»: у ленты рядом
- * с items лежит nextCursor, у поиска — hasMore и nextOffset. Сузив тип до
- * одного из них, функцию нельзя было бы применить ко второму.
- */
 export async function attachUserVotes<T extends { items: FeedRow[] }>(
     prisma: PrismaService,
     page: T,
