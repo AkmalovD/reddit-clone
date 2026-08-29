@@ -1,15 +1,14 @@
 import { CommunityAvatar } from '@/components/subreddit/community-avatar'
 import { JoinButton } from '@/components/subreddit/join-button'
 import { formatCount } from '@/lib/format'
-import type { Subreddit } from '@/lib/types'
+import type { SubredditDetail } from '@/lib/types'
 
 type Props = {
-    subreddit: Subreddit
-    joined: boolean
+    subreddit: SubredditDetail
     signedIn: boolean
 }
 
-export function SubredditBanner({ subreddit, joined, signedIn }: Props) {
+export function SubredditBanner({ subreddit, signedIn }: Props) {
     return (
         <section className="overflow-hidden rounded-2xl bg-card">
             <div className="h-20 bg-brand sm:h-28" />
@@ -31,7 +30,8 @@ export function SubredditBanner({ subreddit, joined, signedIn }: Props) {
 
                 <JoinButton
                     name={subreddit.name}
-                    initialJoined={joined}
+                    initialJoined={subreddit.joined}
+                    role={subreddit.role}
                     signedIn={signedIn}
                 />
             </div>

@@ -2,39 +2,31 @@ import 'server-only'
 import { cache } from 'react'
 import { api, ApiError, query } from './api'
 import { serverApiOrNull } from './server-api'
-import type { Feed, Subreddit } from './types'
+import type { Subreddit, SubredditDetail, SubredditPage } from './types'
 
-const DISCOVERY_TTL_SECONDS = 300
+const DIRECTORY_LIMIT = 10
+const DIRECTORY_TTL_SECONDS = 60
 
 export const getSubreddit = cache((name: string) =>
-    serverApiOrNull<Subreddit>(`/subreddits/${encodeURIComponent(name)}`)
+    serverApiOrNull<SubredditDetail>(`/subreddits/${encodeURIComponent(name)}`)
 )
 
-export const listCommunityNames = cache(async (limit = 8): Promise<string[]> => {
+export const topCommunities = cache(async (): Promise<Subreddit[]> => {
     try {
-        const feed = await api<Feed>(`/feed${query({ sort: 'top', limit: 100 })}`, {
-            next: { revalidate: DISCOVERY_TTL_SECONDS }
-        })
+        const page = await api<SubredditPage>(
+            `/subreddits${query({ sort: 'popular', limit: DIRECTORY_LIMIT })}`,
+            { next: { revalidate: DIRECTORY_TTL_SECONDS } }
+        )
 
-        const names: string[] = []
-
-        for (const post of feed.items) {
-            if (!names.includes(post.subreddit.name)) names.push(post.subreddit.name)
-            if (names.length === limit) break
-        }
-
-        return names
+        return page.items
     } catch (error) {
         if (error instanceof ApiError) return []
         throw error
     }
 })
 
-export const listCommunities = cache(async (limit = 5): Promise<Subreddit[]> => {
-    const names = await listCommunityNames(limit)
-    const found = await Promise.all(names.map((name) => getSubreddit(name)))
+export const listCommunityNames = cache(async (): Promise<string[]> => {
+    const communities = await topCommunities()
 
-    return found
-        .filter((subreddit): subreddit is Subreddit => subreddit !== null)
-        .sort((a, b) => b._count.memberships - a._count.memberships)
+    return communities.map((community) => community.name)
 })

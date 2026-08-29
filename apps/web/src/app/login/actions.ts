@@ -2,11 +2,9 @@
 
 import { redirect } from 'next/navigation'
 import { api, ApiError } from '@/lib/api'
-import { EMPTY_FORM_STATE, type FormState } from '@/lib/form-state'
+import type { FormState } from '@/lib/form-state'
 import { setSession } from '@/lib/session'
 import type { Tokens } from '@/lib/session'
-
-export { EMPTY_FORM_STATE }
 
 export async function loginAction(_prev: FormState, formData: FormData): Promise<FormState> {
     // Arguments to a server action arrive over the network. `FormData` in the

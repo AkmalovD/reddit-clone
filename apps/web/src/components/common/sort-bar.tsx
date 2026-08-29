@@ -10,9 +10,9 @@ const SORTS = [
 ] as const satisfies ReadonlyArray<{ value: Sort; label: string; icon: typeof Flame }>
 
 type Props = {
-    /** Path the links point at; the sort is appended as a query parameter. */
     basePath: string
     active: Sort
+    defaultSort?: Sort
 }
 
 /**
@@ -24,7 +24,7 @@ type Props = {
  * is the card surface, so the control reads as the top edge of the feed below it
  * instead of a second panel stacked above it.
  */
-export function SortBar({ basePath, active }: Props) {
+export function SortBar({ basePath, active, defaultSort = 'hot' }: Props) {
     return (
         <nav aria-label="Sort posts" className="mb-3 flex items-center gap-1">
             {SORTS.map(({ value, label, icon: Icon }) => {
@@ -33,7 +33,7 @@ export function SortBar({ basePath, active }: Props) {
                 return (
                     <Link
                         key={value}
-                        href={value === 'hot' ? basePath : `${basePath}?sort=${value}`}
+                        href={value === defaultSort ? basePath : `${basePath}?sort=${value}`}
                         aria-current={current ? 'page' : undefined}
                         className={cn(
                             'flex h-9 items-center gap-1.5 rounded-full px-3.5',

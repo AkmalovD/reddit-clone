@@ -50,11 +50,7 @@ export default async function SubredditPage({
     return (
         <SiteShell
             banner={
-                <SubredditBanner
-                    subreddit={subreddit}
-                    joined={false}
-                    signedIn={user !== null}
-                />
+                <SubredditBanner subreddit={subreddit} signedIn={user !== null} />
             }
             aside={<AboutCard subreddit={subreddit} />}
         >

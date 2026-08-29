@@ -7,7 +7,7 @@ import { CommunityList } from '@/components/subreddit/community-list'
 import { Button } from '@/components/ui/button'
 import { query } from '@/lib/api'
 import { getCurrentUser } from '@/lib/auth'
-import { listCommunities } from '@/lib/communities'
+import { topCommunities } from '@/lib/communities'
 import { fetchFeed } from '@/lib/feed'
 import type { Sort } from '@/lib/types'
 
@@ -42,7 +42,7 @@ export default async function HomePage({
     const [user, feed, communities] = await Promise.all([
         getCurrentUser(),
         fetchFeed('/feed', active, cursor),
-        listCommunities()
+        topCommunities()
     ])
 
     return (
@@ -50,7 +50,9 @@ export default async function HomePage({
             aside={
                 <>
                     <AboutGrove username={user?.username ?? null} />
-                    {communities.length > 0 && <CommunityList communities={communities} />}
+                    {communities.length > 0 && (
+                        <CommunityList communities={communities.slice(0, 5)} />
+                    )}
                 </>
             }
         >

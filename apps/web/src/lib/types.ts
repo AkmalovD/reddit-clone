@@ -42,12 +42,34 @@ export type CommentNode = {
     replies: CommentNode[]
 }
 
+export type SubredditRole = 'MEMBER' | 'MODERATOR' | 'OWNER'
+
 export type Subreddit = {
     id: string
     name: string
     description: string | null
     createdAt: string
     _count: { memberships: number; posts: number }
+}
+
+export type SubredditDetail = Subreddit & {
+    joined: boolean
+    role: SubredditRole | null
+}
+
+export type SubredditPage = {
+    items: Subreddit[]
+    hasMore: boolean
+    nextOffset: number | null
+}
+
+export type UserProfile = {
+    id: string
+    username: string
+    createdAt: string
+    postKarma: number
+    commentKarma: number
+    _count: { posts: number; comments: number }
 }
 
 export type ActionResult =

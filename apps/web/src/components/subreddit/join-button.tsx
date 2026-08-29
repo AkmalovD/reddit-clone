@@ -5,15 +5,23 @@ import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { setMembership } from '@/app/actions'
 import { Button } from '@/components/ui/button'
+import type { SubredditRole } from '@/lib/types'
 
 type Props = {
     name: string
     initialJoined: boolean
     signedIn: boolean
+    role?: SubredditRole | null
     size?: 'sm' | 'default'
 }
 
-export function JoinButton({ name, initialJoined, signedIn, size = 'default' }: Props) {
+export function JoinButton({
+    name,
+    initialJoined,
+    signedIn,
+    role = null,
+    size = 'default'
+}: Props) {
     const router = useRouter()
     const [joined, setJoined] = useState(initialJoined)
     const [hovered, setHovered] = useState(false)
@@ -39,6 +47,14 @@ export function JoinButton({ name, initialJoined, signedIn, size = 'default' }: 
 
             router.refresh()
         })
+    }
+
+    if (role === 'OWNER') {
+        return (
+            <Button variant="outline" size={size} disabled className="w-24">
+                Owner
+            </Button>
+        )
     }
 
     if (joined) {
