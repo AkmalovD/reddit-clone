@@ -4,6 +4,7 @@ dist/
 .env
 *.log
 generated/
+.vscode
 
 .claude
 /Users/macbookair/WebstormProjects/reddit/apps/api/.agents
