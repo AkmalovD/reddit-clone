@@ -22,7 +22,7 @@ const FEEDS = [
     { href: '/search', label: 'Explore', icon: Compass }
 ] as const
 
-const GROVE = [
+const SITE = [
     { href: '/submit', label: 'Create post', icon: Plus },
     { href: '/saved', label: 'Saved', icon: Bookmark },
     { href: '/kit', label: 'Design kit', icon: LayoutGrid }
@@ -108,10 +108,10 @@ export function SiteNav({ communities, className }: Props) {
                 </>
             )}
 
-            <Heading>Grove</Heading>
+            <Heading>Crest</Heading>
 
             <ul>
-                {GROVE.map(({ href, label, icon: Icon }) => (
+                {SITE.map(({ href, label, icon: Icon }) => (
                     <li key={label}>
                         <Link href={href} {...state(href)}>
                             <Icon className="size-[1.125rem] shrink-0" aria-hidden="true" />

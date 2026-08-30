@@ -1,10 +1,6 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
-/**
- * The mark is the upvote arrow. Identity and the site's core gesture are the same
- * shape, so the logo explains what the product is for without a tagline.
- */
 export function LogoMark({ className }: { className?: string }) {
     return (
         <svg
@@ -25,12 +21,12 @@ export function Logo({ className }: { className?: string }) {
     return (
         <Link
             href="/"
-            aria-label="Grove home"
+            aria-label="Crest home"
             className={cn('flex items-center gap-2 rounded-md', className)}
         >
             <LogoMark />
             <span className="hidden text-xl font-bold tracking-tight sm:inline">
-                Grove
+                Crest
             </span>
         </Link>
     )

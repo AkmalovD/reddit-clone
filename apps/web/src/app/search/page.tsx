@@ -26,7 +26,7 @@ export default async function SearchPage({
             <SiteShell>
                 <EmptyState
                     icon={<Search />}
-                    title="Search Grove"
+                    title="Search Crest"
                     description={
                         term.length === 0
                             ? 'Type in the box at the top to find posts across every community.'

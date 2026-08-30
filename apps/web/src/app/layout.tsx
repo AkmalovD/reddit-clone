@@ -30,7 +30,7 @@ const plexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-    title: { default: 'Grove', template: '%s · Grove' },
+    title: { default: 'Crest', template: '%s · Crest' },
     description: 'Communities, posts, and the arguments underneath them.'
 }
 

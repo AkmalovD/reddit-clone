@@ -15,8 +15,8 @@ export function SearchField({ className }: { className?: string }) {
             <input
                 type="search"
                 name="q"
-                placeholder="Search Grove"
-                aria-label="Search Grove"
+                placeholder="Search Crest"
+                aria-label="Search Crest"
                 className={cn(
                     'h-10 w-full rounded-full bg-muted pr-4 pl-11',
                     'text-sm placeholder:text-muted-foreground',

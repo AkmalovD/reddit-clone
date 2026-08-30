@@ -13,7 +13,7 @@ import type { Sort } from '@/lib/types'
 
 const SORTS: Sort[] = ['hot', 'new', 'top']
 
-function AboutGrove({ username }: { username: string | null }) {
+function AboutCrest({ username }: { username: string | null }) {
     return (
         <Panel className="p-4">
             <PanelHeading>Home</PanelHeading>
@@ -49,7 +49,7 @@ export default async function HomePage({
         <SiteShell
             aside={
                 <>
-                    <AboutGrove username={user?.username ?? null} />
+                    <AboutCrest username={user?.username ?? null} />
                     {communities.length > 0 && (
                         <CommunityList communities={communities.slice(0, 5)} />
                     )}
