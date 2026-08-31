@@ -43,6 +43,8 @@ export function CommentThreadNode({ comment, postId, currentUsername, opUsername
             toast.error(result.message)
             throw new Error(result.message)
         }
+
+        return result.score
     }
 
     async function remove() {

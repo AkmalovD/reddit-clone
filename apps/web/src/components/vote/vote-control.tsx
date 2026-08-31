@@ -49,26 +49,25 @@ const arrow = cva(
 type Props = VariantProps<typeof shell> & {
     score: number
     userVote: VoteValue
-    /**
-     * Supplied in F3 as a server action. The control updates immediately and
-     * rolls back if this rejects, so the caller only has to throw on failure.
-     */
-    onVote?: (value: VoteValue) => void | Promise<void>
+    onVote?: (value: VoteValue) => Promise<number | void> | void
     className?: string
 }
 
 export function VoteControl({ score, userVote, onVote, size, className }: Props) {
-    const [state, setState] = useState({ score, userVote })
+    const safeScore = Number.isFinite(score) ? score : 0
+    const safeVote: VoteValue = userVote === 1 || userVote === -1 ? userVote : 0
+
+    const [state, setState] = useState({ score: safeScore, userVote: safeVote })
 
     // Adjusting state during render, rather than in an effect, when the server
     // sends a different value than we are showing. React re-runs this component
     // immediately with the new state and never commits the stale paint — which is
     // the supported way to reconcile props into state without a flash.
-    const [seen, setSeen] = useState({ score, userVote })
+    const [seen, setSeen] = useState({ score: safeScore, userVote: safeVote })
 
-    if (seen.score !== score || seen.userVote !== userVote) {
-        setSeen({ score, userVote })
-        setState({ score, userVote })
+    if (seen.score !== safeScore || seen.userVote !== safeVote) {
+        setSeen({ score: safeScore, userVote: safeVote })
+        setState({ score: safeScore, userVote: safeVote })
     }
 
     async function cast(direction: VoteValue) {
@@ -82,7 +81,11 @@ export function VoteControl({ score, userVote, onVote, size, className }: Props)
         setState({ score: state.score - state.userVote + next, userVote: next })
 
         try {
-            await onVote?.(next)
+            const authoritative = await onVote?.(next)
+
+            if (typeof authoritative === 'number' && Number.isFinite(authoritative)) {
+                setState({ score: authoritative, userVote: next })
+            }
         } catch {
             setState(previous)
         }

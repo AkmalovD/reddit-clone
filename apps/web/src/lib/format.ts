@@ -8,11 +8,13 @@ const compact = new Intl.NumberFormat('en', {
  * abbreviated rather than allowed to widen it.
  */
 export function formatScore(score: number): string {
-    return compact.format(score)
+    return compact.format(Number.isFinite(score) ? score : 0)
 }
 
 export function formatCount(value: number, one: string, many: string): string {
-    return `${compact.format(value)} ${value === 1 ? one : many}`
+    const safe = Number.isFinite(value) ? value : 0
+
+    return `${compact.format(safe)} ${safe === 1 ? one : many}`
 }
 
 const MINUTE = 60

@@ -38,6 +38,8 @@ export function PostActions({
             toast.error(result.message)
             throw new Error(result.message)
         }
+
+        return result.score
     }
 
     async function share() {

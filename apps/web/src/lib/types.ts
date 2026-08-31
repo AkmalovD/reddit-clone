@@ -72,6 +72,12 @@ export type UserProfile = {
     _count: { posts: number; comments: number }
 }
 
-export type ActionResult =
-    | { ok: true }
-    | { ok: false; reason: 'auth' | 'notfound' | 'invalid' | 'error'; message: string }
+export type ActionFailure = {
+    ok: false
+    reason: 'auth' | 'notfound' | 'invalid' | 'error'
+    message: string
+}
+
+export type ActionResult = { ok: true } | ActionFailure
+
+export type VoteResult = { ok: true; score: number; value: VoteValue } | ActionFailure

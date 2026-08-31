@@ -6,11 +6,19 @@ import { cookies } from 'next/headers'
 import { api, ApiError } from '@/lib/api'
 import { serverApi, serverApiOrNull } from '@/lib/server-api'
 import { clearSession, REFRESH_COOKIE } from '@/lib/session'
-import type { ActionResult, FeedPost, PostDetail, PostType, VoteValue } from '@/lib/types'
+import type {
+    ActionFailure,
+    ActionResult,
+    FeedPost,
+    PostDetail,
+    PostType,
+    VoteResult,
+    VoteValue
+} from '@/lib/types'
 
 const POST_PAGE = '/g/[name]/comments/[id]'
 
-function failure(error: unknown, fallback: string): ActionResult {
+function failure(error: unknown, fallback: string): ActionFailure {
     if (error instanceof ApiError) {
         if (error.status === 401) return { ok: false, reason: 'auth', message: 'Sign in first.' }
         if (error.status === 403) {
@@ -46,10 +54,14 @@ export async function logoutAction() {
     redirect('/')
 }
 
-export async function voteOnPost(postId: string, value: VoteValue): Promise<ActionResult> {
+export async function voteOnPost(postId: string, value: VoteValue): Promise<VoteResult> {
     try {
-        await serverApi(`/posts/${postId}/vote`, { method: 'PUT', body: { value } })
-        return { ok: true }
+        const result = await serverApi<{ value: VoteValue; score: number }>(
+            `/posts/${postId}/vote`,
+            { method: 'PUT', body: { value } }
+        )
+
+        return { ok: true, score: result.score, value: result.value }
     } catch (error) {
         return failure(error, 'That vote was rejected.')
     }
@@ -58,10 +70,14 @@ export async function voteOnPost(postId: string, value: VoteValue): Promise<Acti
 export async function voteOnComment(
     commentId: string,
     value: VoteValue
-): Promise<ActionResult> {
+): Promise<VoteResult> {
     try {
-        await serverApi(`/comments/${commentId}/vote`, { method: 'PUT', body: { value } })
-        return { ok: true }
+        const result = await serverApi<{ value: VoteValue; score: number }>(
+            `/comments/${commentId}/vote`,
+            { method: 'PUT', body: { value } }
+        )
+
+        return { ok: true, score: result.score, value: result.value }
     } catch (error) {
         return failure(error, 'That vote was rejected.')
     }
