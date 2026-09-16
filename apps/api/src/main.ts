@@ -2,6 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { ConfigService } from "@nestjs/config";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { join } from "node:path";
 import { AppModule } from "./app.module";
 import { configureApp } from "./app.setup";
 
@@ -9,6 +10,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
   configureApp(app)
+
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' })
   app.enableShutdownHooks()
 
   const config = app.get(ConfigService)

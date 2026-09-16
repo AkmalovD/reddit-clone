@@ -1,4 +1,4 @@
-const API_URL = process.env.API_URL ?? 'http://localhost:3000/api'
+const API_URL = process.env.API_URL ?? 'http://localhost:4000/api'
 
 export class ApiError extends Error {
     constructor(
@@ -18,14 +18,16 @@ export type ApiOptions = Omit<RequestInit, 'body'> & {
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
     const { token, body, headers, ...rest } = options
 
+    const isForm = body instanceof FormData
+
     const res = await fetch(`${API_URL}${path}`, {
         ...rest,
         headers: {
-            ...(body !== undefined && { 'Content-Type': 'application/json' }),
+            ...(body !== undefined && !isForm && { 'Content-Type': 'application/json' }),
             ...(token && { Authorization: `Bearer ${token}` }),
             ...headers
         },
-        ...(body !== undefined && { body: JSON.stringify(body) })
+        ...(body !== undefined && { body: isForm ? body : JSON.stringify(body) })
     })
 
     if (!res.ok) {

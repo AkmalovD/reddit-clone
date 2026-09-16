@@ -150,6 +150,31 @@ export type CreatePostInput = {
     subreddit: string
     body: string
     url: string
+    mediaUrl: string
+}
+
+export async function uploadPostMedia(
+    formData: FormData
+): Promise<{ ok: true; url: string; kind: 'IMAGE' | 'VIDEO' } | ActionFailure> {
+    const file = formData.get('file')
+
+    if (!(file instanceof File) || file.size === 0) {
+        return { ok: false, reason: 'invalid', message: 'Choose a file to upload.' }
+    }
+
+    const forward = new FormData()
+    forward.append('file', file)
+
+    try {
+        const res = await serverApi<{ url: string; kind: 'IMAGE' | 'VIDEO' }>('/uploads', {
+            method: 'POST',
+            body: forward
+        })
+
+        return { ok: true, ...res }
+    } catch (error) {
+        return failure(error, 'That file could not be uploaded.')
+    }
 }
 
 export async function createPost(
@@ -174,6 +199,10 @@ export async function createPost(
         return { ok: false, reason: 'invalid', message: 'Enter an http or https link.' }
     }
 
+    if ((input.type === 'IMAGE' || input.type === 'VIDEO') && input.mediaUrl.trim().length === 0) {
+        return { ok: false, reason: 'invalid', message: 'Upload a file first.' }
+    }
+
     let created: PostDetail
 
     try {
@@ -183,9 +212,11 @@ export async function createPost(
                 type: input.type,
                 title,
                 subreddit,
-                ...(input.type === 'TEXT'
-                    ? { body: input.body.trim() }
-                    : { url: input.url.trim() })
+                ...(input.type === 'TEXT' && { body: input.body.trim() }),
+                ...(input.type === 'LINK' && { url: input.url.trim() }),
+                ...((input.type === 'IMAGE' || input.type === 'VIDEO') && {
+                    mediaUrl: input.mediaUrl.trim()
+                })
             }
         })
     } catch (error) {

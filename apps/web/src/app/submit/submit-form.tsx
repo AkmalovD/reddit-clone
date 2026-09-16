@@ -2,9 +2,9 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { FileText, Link as LinkIcon, LoaderCircle } from 'lucide-react'
+import { FileText, Image as ImageIcon, Link as LinkIcon, LoaderCircle, Video } from 'lucide-react'
 import { toast } from 'sonner'
-import { createPost } from '@/app/actions'
+import { createPost, uploadPostMedia } from '@/app/actions'
 import { FieldError } from '@/components/feedback/field-error'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,9 @@ const BODY_MAX = 40_000
 
 const TABS = [
     { value: 'TEXT', label: 'Text', icon: FileText },
-    { value: 'LINK', label: 'Link', icon: LinkIcon }
+    { value: 'LINK', label: 'Link', icon: LinkIcon },
+    { value: 'IMAGE', label: 'Image', icon: ImageIcon },
+    { value: 'VIDEO', label: 'Video', icon: Video }
 ] as const satisfies ReadonlyArray<{ value: PostType; label: string; icon: typeof FileText }>
 
 export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
@@ -28,15 +30,39 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
     const [title, setTitle] = useState('')
     const [body, setBody] = useState('')
     const [url, setUrl] = useState('')
+    const [mediaUrl, setMediaUrl] = useState('')
+    const [uploading, setUploading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [pending, setPending] = useState(false)
+
+    async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        setError(null)
+        setMediaUrl('')
+        setUploading(true)
+
+        const form = new FormData()
+        form.append('file', file)
+        const result = await uploadPostMedia(form)
+
+        setUploading(false)
+
+        if (!result.ok) {
+            setError(result.message)
+            return
+        }
+
+        setMediaUrl(result.url)
+    }
 
     async function submit(event: React.FormEvent) {
         event.preventDefault()
         setError(null)
         setPending(true)
 
-        const result = await createPost({ type, title, subreddit, body, url })
+        const result = await createPost({ type, title, subreddit, body, url, mediaUrl })
 
         if (!result.ok) {
             setPending(false)
@@ -48,7 +74,11 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
         router.push(result.href ?? '/')
     }
 
-    const ready = title.trim().length > 0 && subreddit.trim().length >= 3
+    const isMedia = type === 'IMAGE' || type === 'VIDEO'
+    const ready =
+        title.trim().length > 0 &&
+        subreddit.trim().length >= 3 &&
+        (isMedia ? mediaUrl.length > 0 : true)
 
     return (
         <form onSubmit={submit} className="space-y-5 rounded-2xl bg-card p-4 sm:p-5">
@@ -121,7 +151,7 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
                 />
             </div>
 
-            {type === 'TEXT' ? (
+            {type === 'TEXT' && (
                 <div className="space-y-2">
                     <Label htmlFor="body">Text</Label>
                     <Textarea
@@ -135,7 +165,9 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
                         className="resize-y font-body"
                     />
                 </div>
-            ) : (
+            )}
+
+            {type === 'LINK' && (
                 <div className="space-y-2">
                     <Label htmlFor="url">Link</Label>
                     <Input
@@ -151,6 +183,35 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
                 </div>
             )}
 
+            {isMedia && (
+                <div className="space-y-2">
+                    <Label htmlFor="media">{type === 'IMAGE' ? 'Image' : 'Video'}</Label>
+                    <Input
+                        id="media"
+                        type="file"
+                        accept={type === 'IMAGE' ? 'image/*' : 'video/*'}
+                        onChange={onFile}
+                        disabled={uploading}
+                    />
+                    {uploading && (
+                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+                            Uploading
+                        </p>
+                    )}
+                    {mediaUrl && type === 'IMAGE' && (
+                        <img
+                            src={mediaUrl}
+                            alt=""
+                            className="max-h-80 rounded-xl object-contain"
+                        />
+                    )}
+                    {mediaUrl && type === 'VIDEO' && (
+                        <video src={mediaUrl} controls className="max-h-80 w-full rounded-xl" />
+                    )}
+                </div>
+            )}
+
             <FieldError>{error}</FieldError>
 
             <div className="flex justify-end gap-2">
@@ -161,6 +222,7 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
                         setTitle('')
                         setBody('')
                         setUrl('')
+                        setMediaUrl('')
                         setError(null)
                     }}
                 >

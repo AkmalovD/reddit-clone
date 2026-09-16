@@ -6,6 +6,7 @@ export const POST_LIST_FIELDS = {
     type: true,
     title: true,
     url: true,
+    mediaUrl: true,
     score: true,
     commentCount: true,
     createdAt: true,

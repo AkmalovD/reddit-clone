@@ -11,6 +11,7 @@ import { CommentsModule } from "./comments/comments.module";
 import { VotesModule } from "./votes/votes.module";
 import { SearchModule } from "./search/search.module";
 import { UsersModule } from "./users/users.module";
+import { UploadsModule } from "./uploads/uploads.module";
 import { APP_GUARD } from "@nestjs/core";
 import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 
@@ -30,7 +31,8 @@ import { RateLimitGuard } from "./common/guards/rate-limit.guard";
     CommentsModule,
     VotesModule,
     SearchModule,
-    UsersModule
+    UsersModule,
+    UploadsModule
   ],
   providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }]
 })

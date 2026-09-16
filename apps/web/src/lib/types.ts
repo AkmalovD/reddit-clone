@@ -1,7 +1,7 @@
 export type Sort = 'hot' | 'new' | 'top'
 export type VoteValue = -1 | 0 | 1
 
-export type PostType = 'TEXT' | 'LINK'
+export type PostType = 'TEXT' | 'LINK' | 'IMAGE' | 'VIDEO'
 
 export type Author = { id: string; username: string }
 
@@ -10,6 +10,7 @@ export type FeedPost = {
     type: PostType
     title: string
     url: string | null
+    mediaUrl: string | null
     score: number
     commentCount: number
     createdAt: string

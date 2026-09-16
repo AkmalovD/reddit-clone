@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ACCESS_COOKIE, ACCESS_MAX_AGE, COOKIE_BASE, REFRESH_COOKIE, REFRESH_MAX_AGE, Tokens } from "./lib/session-config";
 
-const API_URL = process.env.API_URL ?? 'http://localhost:3000/api'
+const API_URL = process.env.API_URL ?? 'http://localhost:4000/api'
 
 export async function proxy(request:NextRequest) {
     const access = request.cookies.get(ACCESS_COOKIE)

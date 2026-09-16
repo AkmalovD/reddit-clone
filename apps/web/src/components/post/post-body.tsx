@@ -26,6 +26,16 @@ export function PostBody({ post, className }: { post: PostDetail; className?: st
         )
     }
 
+    if (post.type === 'IMAGE' && post.mediaUrl) {
+        return <img src={post.mediaUrl} alt="" className={cn('w-full rounded-xl', className)} />
+    }
+
+    if (post.type === 'VIDEO' && post.mediaUrl) {
+        return (
+            <video src={post.mediaUrl} controls className={cn('w-full rounded-xl', className)} />
+        )
+    }
+
     if (!post.body) return null
 
     return (

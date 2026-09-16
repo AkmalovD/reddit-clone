@@ -53,6 +53,23 @@ export function PostCard({ post, showSubreddit = true, className }: Props) {
                 </a>
             )}
 
+            {post.type === 'IMAGE' && post.mediaUrl && (
+                <img
+                    src={post.mediaUrl}
+                    alt=""
+                    className="mt-2 max-h-[512px] w-full rounded-xl object-cover"
+                />
+            )}
+
+            {post.type === 'VIDEO' && post.mediaUrl && (
+                <video
+                    src={post.mediaUrl}
+                    controls
+                    preload="metadata"
+                    className="mt-2 max-h-[512px] w-full rounded-xl"
+                />
+            )}
+
             <PostActions
                 postId={post.id}
                 href={href}

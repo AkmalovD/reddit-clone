@@ -3,12 +3,12 @@ import { IsIn, IsString, IsUrl, MaxLength, MinLength, ValidateIf } from 'class-v
 
 export class CreatePostDto {
   @ApiProperty({
-    enum: ['TEXT', 'LINK'],
-    description: 'TEXT требует body, LINK требует url.',
+    enum: ['TEXT', 'LINK', 'IMAGE', 'VIDEO'],
+    description: 'TEXT требует body, LINK требует url, IMAGE/VIDEO требуют mediaUrl.',
     example: 'TEXT',
   })
-  @IsIn(['TEXT', 'LINK'])
-  type!: 'TEXT' | 'LINK';
+  @IsIn(['TEXT', 'LINK', 'IMAGE', 'VIDEO'])
+  type!: 'TEXT' | 'LINK' | 'IMAGE' | 'VIDEO';
 
   @ApiProperty({ maxLength: 300, example: 'Как устроен индекс в Postgres' })
   @IsString()
@@ -33,6 +33,14 @@ export class CreatePostDto {
   @ValidateIf((o: CreatePostDto) => o.type === 'LINK')
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   url?: string;
+
+  @ApiPropertyOptional({
+    description: 'Обязательно при type=IMAGE или VIDEO. Возвращается из POST /uploads.',
+    example: 'http://localhost:3000/uploads/019ffedc.jpg',
+  })
+  @ValidateIf((o: CreatePostDto) => o.type === 'IMAGE' || o.type === 'VIDEO')
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
+  mediaUrl?: string;
 
   @ApiProperty({ description: 'Имя сообщества.', example: 'programming' })
   @IsString()

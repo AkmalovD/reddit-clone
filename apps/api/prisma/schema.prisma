@@ -18,6 +18,8 @@ enum MembershipRole {
 enum PostType {
   TEXT
   LINK
+  IMAGE
+  VIDEO
 }
 
 enum TokenRevokeReason {
@@ -77,6 +79,7 @@ model Post {
   title        String    @db.VarChar(300)
   body         String?   @db.Text
   url          String?   @db.Text
+  mediaUrl     String?   @db.Text
   score        Int       @default(0)
   commentCount Int       @default(0) @map("comment_count")
   authorId     String?   @map("author_id") @db.Uuid
@@ -88,7 +91,7 @@ model Post {
   upvotes      Int       @default(0)
   downvotes    Int       @default(0)
   hotRank      Float     @default(0) @map("hot_rank")
-  
+
   searchVector Unsupported("tsvector")? @map("search_vector")
 
   author    User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
@@ -99,13 +102,10 @@ model Post {
   @@index([subredditId, hotRank(sort: Desc), id(sort: Desc)])
   @@index([subredditId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([subredditId, score(sort: Desc), id(sort: Desc)])
-
   @@index([authorId, createdAt(sort: Desc), id(sort: Desc)])
-
   @@index([hotRank(sort: Desc), id(sort: Desc)])
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([score(sort: Desc), id(sort: Desc)])
-
   @@index([searchVector], type: Gin, map: "posts_search_idx")
   @@map("posts")
 }
@@ -169,13 +169,13 @@ model CommentVote {
 }
 
 model RefreshToken {
-  id        String    @id @default(uuid(7)) @db.Uuid
-  tokenHash String    @unique @map("token_hash")
-  userId    String    @map("user_id") @db.Uuid
-  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
-  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  id            String             @id @default(uuid(7)) @db.Uuid
+  tokenHash     String             @unique @map("token_hash")
+  userId        String             @map("user_id") @db.Uuid
+  expiresAt     DateTime           @map("expires_at") @db.Timestamptz(3)
+  revokedAt     DateTime?          @map("revoked_at") @db.Timestamptz(3)
   revokedReason TokenRevokeReason? @map("revoked_reason")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

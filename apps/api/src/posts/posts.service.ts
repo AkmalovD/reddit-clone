@@ -54,6 +54,7 @@ export class PostsService {
                 title: dto.title,
                 body: dto.type === 'TEXT' ? dto.body : null,
                 url: dto.type === 'LINK' ? dto.url : null,
+                mediaUrl: dto.type === 'IMAGE' || dto.type === 'VIDEO' ? dto.mediaUrl : null,
                 authorId: userId,
                 subredditId: subreddit.id
             },
