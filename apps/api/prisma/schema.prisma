@@ -37,6 +37,7 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   posts         Post[]
+  savedPosts    SavedPost[]
   memberships   Membership[]
   comments      Comment[]
   postVotes     PostVote[]
@@ -94,10 +95,11 @@ model Post {
 
   searchVector Unsupported("tsvector")? @map("search_vector")
 
-  author    User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  subreddit Subreddit  @relation(fields: [subredditId], references: [id], onDelete: Cascade)
-  comments  Comment[]
-  votes     PostVote[]
+  author     User?       @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  subreddit  Subreddit   @relation(fields: [subredditId], references: [id], onDelete: Cascade)
+  comments   Comment[]
+  votes      PostVote[]
+  savedPosts SavedPost[]
 
   @@index([subredditId, hotRank(sort: Desc), id(sort: Desc)])
   @@index([subredditId, createdAt(sort: Desc), id(sort: Desc)])
@@ -108,6 +110,19 @@ model Post {
   @@index([score(sort: Desc), id(sort: Desc)])
   @@index([searchVector], type: Gin, map: "posts_search_idx")
   @@map("posts")
+}
+
+model SavedPost {
+  userId  String   @map("user_id") @db.Uuid
+  postId  String   @map("psot_id") @db.Uuid
+  savedAt DateTime @default(now()) @map("saved_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@id([userId, postId])
+  @@index([userId, postId])
+  @@map("saved_posts")
 }
 
 model Comment {
