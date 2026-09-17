@@ -50,4 +50,15 @@ export class SavedService {
 
     return attachUserVotes(this.prisma, { items, nextCursor: hasMore ? page[page.length - 1].postId : null }, userId)
   }
+
+  async ids(userId: string) {
+    const rows = await this.prisma.savedPost.findMany({
+      where: { userId, post: { deletedAt: null } },
+      orderBy: { savedAt: 'desc' },
+      take: 500,
+      select: { postId: true },
+    });
+
+    return { ids: rows.map((r) => r.postId) };
+  }
 }

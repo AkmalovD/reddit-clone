@@ -14,13 +14,14 @@ import { UsersModule } from "./users/users.module";
 import { UploadsModule } from "./uploads/uploads.module";
 import { APP_GUARD } from "@nestjs/core";
 import { RateLimitGuard } from "./common/guards/rate-limit.guard";
+import { SavedModule } from './saved/saved.module';
 
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      validate: validateEnv
+      validate: validateEnv,
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
@@ -32,9 +33,9 @@ import { RateLimitGuard } from "./common/guards/rate-limit.guard";
     VotesModule,
     SearchModule,
     UsersModule,
-    UploadsModule
+    UploadsModule,
+    SavedModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }]
+  providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }],
 })
-
 export class AppModule {}
