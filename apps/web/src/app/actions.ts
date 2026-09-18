@@ -259,16 +259,29 @@ export async function updatePost(postId: string, body: string): Promise<ActionRe
     }
 }
 
-const SAVED_LOOKUP_LIMIT = 50
+export async function savePost(postId: string): Promise<ActionResult> {
+    try {
+        await serverApi(`/posts/${postId}/save`, { method: 'POST' })
+        return { ok: true }
+    } catch (error) {
+        return failure(error, 'That post could not be saved.')
+    }
+}
 
-export async function getSavedPosts(ids: string[]): Promise<FeedPost[]> {
-    const wanted = ids.filter((id) => typeof id === 'string').slice(0, SAVED_LOOKUP_LIMIT)
+export async function unsavePost(postId: string): Promise<ActionResult> {
+    try {
+        await serverApi(`/posts/${postId}/save`, { method: 'DELETE' })
+        return { ok: true }
+    } catch (error) {
+        return failure(error, 'That post could not be removed.')
+    }
+}
 
-    if (wanted.length === 0) return []
-
-    const found = await Promise.all(
-        wanted.map((id) => serverApiOrNull<PostDetail>(`/posts/${id}`))
-    )
-
-    return found.filter((post): post is PostDetail => post !== null)
+export async function getSavedIds(): Promise<string[]> {
+    try {
+        const res = await serverApi<{ ids: string[] }>('/me/saved/ids')
+        return res.ids
+    } catch {
+        return []
+    }
 }

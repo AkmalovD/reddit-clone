@@ -1,93 +1,79 @@
-'use client'
+import {getSavedIds, savePost, unsavePost} from "@/app/actions";
+import {useCallback, useEffect, useSyncExternalStore} from "react";
 
-import { useCallback, useSyncExternalStore } from 'react'
-
-const KEY = 'grove.saved'
-const LIMIT = 200
 const EMPTY: string[] = []
-
 const listeners = new Set<() => void>()
 
 let snapshot: string[] = EMPTY
-let loaded = false
-
-function read(): string[] {
-    try {
-        const raw = localStorage.getItem(KEY)
-        const parsed: unknown = raw ? JSON.parse(raw) : []
-
-        if (!Array.isArray(parsed)) return EMPTY
-
-        return parsed.filter((id): id is string => typeof id === 'string').slice(0, LIMIT)
-    } catch {
-        return EMPTY
-    }
-}
-
-function getSnapshot(): string[] {
-    if (!loaded) {
-        snapshot = read()
-        loaded = true
-    }
-
-    return snapshot
-}
-
-function getServerSnapshot(): string[] {
-    return EMPTY
-}
+let hydrated = false
+let hydrating: Promise<void> | null = null
 
 function emit() {
     for (const listener of listeners) listener()
 }
 
-function onStorage(event: StorageEvent) {
-    if (event.key !== KEY) return
-
-    snapshot = read()
+function set(next: string[]) {
+    snapshot = next
     emit()
 }
 
 function subscribe(listener: () => void) {
     listeners.add(listener)
-    window.addEventListener('storage', onStorage)
-
     return () => {
         listeners.delete(listener)
-        window.removeEventListener('storage', onStorage)
     }
 }
 
-function write(next: string[]) {
-    snapshot = next
-    loaded = true
-
-    try {
-        localStorage.setItem(KEY, JSON.stringify(next))
-    } catch {
-        emit()
-        return
-    }
-
-    emit()
+function getSnapshot() {
+    return snapshot
 }
+
+function hydrate() {
+    if (hydrated) return
+    if (!hydrating) {
+        hydrating = getSavedIds()
+            .then((ids) => {
+                snapshot = ids
+                hydrated = true
+                emit()
+            })
+            .finally(() => {
+                hydrating = null
+            })
+    }
+}
+
+type ToggleResult = { ok: boolean, saved: boolean, message?: string }
 
 export function useSavedPosts() {
-    const ids = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+    const ids = useSyncExternalStore(subscribe, getSnapshot, () => EMPTY)
 
-    const toggle = useCallback((id: string) => {
-        const current = getSnapshot()
-        const next = current.includes(id)
-            ? current.filter((saved) => saved !== id)
-            : [id, ...current].slice(0, LIMIT)
+    useEffect(() => {
+        hydrate()
+    }, []);
 
-        write(next)
+    const toggle = useCallback(async (id: string): Promise<ToggleResult> => {
+        const willSave = !snapshot.includes(id)
+        const before = snapshot
 
-        return next.includes(id)
+        set(willSave ? [id, ...snapshot] : snapshot.filter((saved) => saved !== id))
+
+        const res = willSave ? await savePost(id) : await unsavePost(id)
+
+        if (!res.ok) {
+            set(before)
+            return { ok: false, saved: !willSave, message: res.message }
+        }
+
+        return { ok: true, saved: willSave }
     }, [])
 
-    const remove = useCallback((id: string) => {
-        write(getSnapshot().filter((saved) => saved !== id))
+    const remove = useCallback(async (id: string) => {
+        const before = snapshot
+        set(snapshot.filter((saved) => saved !== id))
+
+        const res = await unsavePost(id)
+        if (!res.ok) set(before)
     }, [])
 
     return { ids, toggle, remove }
