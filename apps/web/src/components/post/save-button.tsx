@@ -10,14 +10,22 @@ export function SaveButton({ postId }: { postId: string }) {
     const { ids, toggle } = useSavedPosts()
     const saved = ids.includes(postId)
 
+    async function onClick() {
+        const result = await toggle(postId)
+
+        if (!result.ok) {
+            toast.error(result.message ?? 'That did not work')
+            return
+        }
+
+        toast(result.saved ? 'Saved' : 'Removed from saved')
+    }
+
     return (
         <button
             type="button"
             aria-pressed={saved}
-            onClick={() => {
-                const nowSaved = toggle(postId)
-                toast(nowSaved ? 'Saved on this device' : 'Removed from saved')
-            }}
+            onClick={onClick}
             className={cn(chip, saved && 'text-foreground')}
         >
             <Bookmark
