@@ -6,6 +6,7 @@ export type CommentRow = {
     parentId: string | null
     createdAt: Date
     updatedAt: Date
+    editedAt: Date | null
     deletedAt: Date | null
     confidence: number
     author: { id: string, username: string } | null
@@ -27,6 +28,7 @@ export function buildTree(rows: CommentRow[], votes?: Map<string, number>): Comm
             ...rest,
             body: deletedAt ? '[deleted]' : row.body,
             author: deletedAt ? null : row.author,
+            editedAt: deletedAt ? null : row.editedAt,
             userVote: votes?.get(row.id) ?? 0,
             replies: []
         }

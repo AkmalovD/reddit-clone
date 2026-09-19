@@ -3,6 +3,7 @@ import { Prisma } from "../../generated/prisma/client"
 import { PrismaService } from "../prisma/prisma.service"
 import { CreateCommentDto } from "./dto/create-comment.dto"
 import { buildTree } from "./tree"
+import { UpdateCommentDto } from './dto/update-comment.dto';
 
 const MAX_DEPTH = 10
 
@@ -14,6 +15,7 @@ const COMMENT_FIELDS = {
     parentId: true,
     createdAt: true,
     updatedAt: true,
+    editedAt: true,
     deletedAt: true,
     confidence: true,
     author: { select: { id: true, username: true } }
@@ -162,5 +164,23 @@ export class CommentsService {
         })
 
         return { deleted: true }
+    }
+
+    async update(commentId: string, dto: UpdateCommentDto, userId: string) {
+      const comment = await this.prisma.comment.findUnique({
+        where: { id: commentId },
+        select: { authorId: true, deletedAt: true }
+      })
+
+      if (!comment || comment.deletedAt)
+        throw new NotFoundException('comment not found');
+      if (comment.authorId !== userId)
+        throw new ForbiddenException('not your comment');
+
+      return this.prisma.comment.update({
+        where: { id: commentId },
+        data: { body: dto.body, editedAt: new Date() },
+        select: COMMENT_FIELDS,
+      });
     }
 }
