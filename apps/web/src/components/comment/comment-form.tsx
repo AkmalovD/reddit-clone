@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { LoaderCircle } from 'lucide-react'
 import { toast } from 'sonner'
-import { createComment } from '@/app/actions'
+import { createComment, updateComment } from '@/app/actions'
 import { FieldError } from '@/components/feedback/field-error'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -22,6 +22,8 @@ type Props = {
     onDone?: () => void
     onCancel?: () => void
     className?: string
+    commentId?: string
+    initialBody?: string
 }
 
 export function CommentForm({
@@ -32,10 +34,12 @@ export function CommentForm({
     autoFocus = false,
     onDone,
     onCancel,
-    className
+    className,
+    commentId = '',
+    initialBody = ''
 }: Props) {
     const router = useRouter()
-    const [body, setBody] = useState('')
+    const [body, setBody] = useState(initialBody)
     const [error, setError] = useState<string | null>(null)
     const [pending, setPending] = useState(false)
 
@@ -81,7 +85,9 @@ export function CommentForm({
         setError(null)
         setPending(true)
 
-        const result = await createComment(postId, trimmed, parentId)
+        const result = commentId
+            ? await updateComment(commentId, trimmed)
+            : await createComment(postId, trimmed, parentId)
 
         setPending(false)
 
@@ -90,8 +96,8 @@ export function CommentForm({
             return
         }
 
-        setBody('')
-        toast.success('Comment posted')
+        if (!commentId) setBody('')
+        toast.success(commentId ? 'Comment updated' : 'Comment posted')
         onDone?.()
         router.refresh()
     }
@@ -137,7 +143,9 @@ export function CommentForm({
                     {pending && (
                         <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
                     )}
-                    {pending ? 'Posting' : 'Comment'}
+                    {commentId
+                        ? pending ? 'Saving' : 'Save'
+                        : pending ? 'Posting' : 'Comment'}
                 </Button>
             </div>
         </form>

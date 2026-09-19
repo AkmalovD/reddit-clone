@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { MessageSquare, Plus, Share, Trash2 } from 'lucide-react'
+import { MessageSquare, Pencil, Plus, Share, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteComment, voteOnComment } from '@/app/actions'
 import { CommentForm } from '@/components/comment/comment-form'
@@ -30,6 +30,7 @@ export function CommentThreadNode({ comment, postId, currentUsername, opUsername
     const router = useRouter()
     const [collapsed, setCollapsed] = useState(false)
     const [replying, setReplying] = useState(false)
+    const [editing, setEditing] = useState(false)
 
     const deleted = comment.author === null
     const isOp = !deleted && comment.author?.username === opUsername
@@ -88,6 +89,10 @@ export function CommentThreadNode({ comment, postId, currentUsername, opUsername
                 ·
             </span>
             <RelativeTime iso={comment.createdAt} className="text-muted-foreground" />
+
+            {comment.editedAt && (
+                <span className="text-muted-foreground italic">· edited</span>
+            )}
         </div>
     )
 
@@ -133,14 +138,27 @@ export function CommentThreadNode({ comment, postId, currentUsername, opUsername
                 <div className="min-w-0 flex-1 pb-1">
                     {byline}
 
-                    <div
-                        className={cn(
-                            'mt-1 font-body text-sm/6 whitespace-pre-line',
-                            deleted && 'text-muted-foreground italic'
-                        )}
-                    >
-                        {comment.body}
-                    </div>
+                    {editing ? (
+                        <CommentForm
+                            postId={postId}
+                            commentId={comment.id}
+                            initialBody={comment.body}
+                            username={currentUsername}
+                            autoFocus
+                            onDone={() => setEditing(false)}
+                            onCancel={() => setEditing(false)}
+                            className="mt-1"
+                        />
+                    ) : (
+                        <div
+                            className={cn(
+                                'mt-1 font-body text-sm/6 whitespace-pre-line',
+                                deleted && 'text-muted-foreground italic'
+                            )}
+                        >
+                            {comment.body}
+                        </div>
+                    )}
 
                     <div className="mt-1 flex flex-wrap items-center gap-1">
                         <VoteControl
@@ -175,6 +193,17 @@ export function CommentThreadNode({ comment, postId, currentUsername, opUsername
                             <Share className="size-4" aria-hidden="true" />
                             Share
                         </button>
+
+                        {isMine && (
+                            <button
+                                type="button"
+                                onClick={() => setEditing((open) => !open)}
+                                className={chip}
+                            >
+                                <Pencil className="size-4" aria-hidden="true" />
+                                Edit
+                            </button>
+                        )}
 
                         {isMine && (
                             <button type="button" onClick={() => void remove()} className={chip}>

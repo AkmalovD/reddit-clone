@@ -36,6 +36,7 @@ export type CommentNode = {
     score: number
     parentId: string | null
     createdAt: string
+    editedAt: string | null
     updatedAt: string
     confidence: number
     userVote: VoteValue

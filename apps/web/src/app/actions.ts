@@ -133,6 +133,28 @@ export async function deleteComment(commentId: string): Promise<ActionResult> {
     }
 }
 
+export async function updateComment(commentId: string, body: string): Promise<ActionResult> {
+    const trimmed = body.trim()
+
+    if (trimmed.length === 0 || trimmed.length > 1000) {
+        return { ok: false, reason: 'invalid', message: 'Comments are 1 to 1000 characters' }
+    }
+
+    try {
+        await serverApi(`/comments/${commentId}`, { method: 'PATCH', body: { body: trimmed } })
+        revalidatePath(POST_PAGE, 'page')
+        return { ok: true }
+    } catch (error) {
+        const result = failure(error, 'That comment could not be edited')
+
+        if (!result.ok && result.reason === 'auth') {
+            return { ok: false, reason: 'auth', message: 'You can only edit your own comments' }
+        }
+
+        return result
+    }
+}
+
 export async function deletePost(postId: string, subreddit: string): Promise<ActionResult> {
     try {
         await serverApi(`/posts/${postId}`, { method: 'DELETE' })
