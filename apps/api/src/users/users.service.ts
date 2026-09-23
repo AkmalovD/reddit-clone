@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { ListPostsDto } from "../posts/dto/lists-post.dto";
 import { attachUserVotes, ORDER_BY, POST_LIST_FIELDS } from "../posts/post-fields";
+import { Prisma } from '../../generated/prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -64,5 +65,59 @@ export class UsersService {
             { items, nextCursor: hasMore? items[items.length - 1].id : null },
             viewerId
         )
+    }
+
+    async listComments(username: string, query: ListPostsDto, viewerId: string) {
+      const user = await this.requireUser(username)
+
+      const limit = query.limit ?? 25
+      const orderBy: Prisma.CommentOrderByWithRelationInput[] =
+        query.sort === 'top'
+          ? [{ score: 'desc' }, { id: 'desc' }]
+          : [{ createdAt: 'desc' }, { deletedAt: null }]
+
+      const rows = await this.prisma.comment.findMany({
+        where: { authorId: user.id, deletedAt: null},
+        orderBy,
+        take: limit + 1,
+        ...(query.cursor && { cursor: { id: query.cursor }, skip: 1 }),
+        select: {
+          id: true,
+          body: true,
+          score: true,
+          createdAt: true,
+          editedAt: true,
+          post: {
+            select: {
+              id: true,
+              title: true,
+              subreddit: { select: { name: true } }
+            }
+          }
+        }
+      })
+
+      const hasMore = rows.length > limit
+      const items = hasMore ? rows.slice(0, limit) : rows
+
+      const votes =
+        viewerId && items.length
+          ? new Map(
+              (
+                await this.prisma.commentVote.findMany({
+                  where: {
+                    userId: viewerId,
+                    commentId: { in: items.map((c) => c.id) },
+                  },
+                  select: { commentId: true, value: true },
+                })
+              ).map((v) => [v.commentId, v.value]),
+            )
+          : undefined;
+
+      return {
+        items: items.map((c) => ({ ...c, userVote: votes?.get(c.id) ?? 0 })),
+        nextCursor: hasMore ? items[items.length - 1].id : null,
+      };
     }
 }

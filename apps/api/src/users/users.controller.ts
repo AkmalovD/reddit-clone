@@ -38,4 +38,22 @@ export class UsersController {
     ) {
         return this.users.listPosts(username, query, user?.id)
     }
+
+    @Get(':username/comments')
+    @UseGuards(OptionalJwtAuthGuard)
+    @ApiOptionalBearerAuth()
+    @ApiParam({ name: 'username', example: 'kmartell' })
+    @ApiOperation({
+      summary: 'Коментарии пользователя',
+      description: 'Плоский список с контекстом поста. Сортировка new или top'
+    })
+    @ApiResponse({ status: 200, description: '{ items, nextCursor }' })
+    @ApiResponse({ status: 404, description: 'Пользователь был найден' })
+    listComments(
+      @Param('username') username: string,
+      @Query() query: ListPostsDto,
+      @CurrentUser() user: AuthUser | null
+    ) {
+      return this.users.listComments(username, query, user?.id)
+    }
 }
