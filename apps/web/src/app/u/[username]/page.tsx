@@ -1,21 +1,37 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Cake, MessageSquare, FileText } from 'lucide-react'
+import { Cake, Clock, FileText, Flame, MessageSquare, TrendingUp } from 'lucide-react'
 import { Panel, PanelHeading } from '@/components/common/panel'
-import { SortBar } from '@/components/common/sort-bar'
 import { SiteShell } from '@/components/layout/site-shell'
 import { PostList } from '@/components/post/post-list'
+import { UserCommentList } from '@/components/comment/user-comment-list'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { query } from '@/lib/api'
 import { getCurrentUser } from '@/lib/auth'
 import { fetchFeed } from '@/lib/feed'
 import { formatMonthYear, formatScore } from '@/lib/format'
 import { serverApiOrNull } from '@/lib/server-api'
-import type { Sort, UserProfile } from '@/lib/types'
+import { cn } from '@/lib/utils'
+import type { Sort, UserCommentPage, UserProfile } from '@/lib/types'
 
 const SORTS: Sort[] = ['hot', 'new', 'top']
+const SORT_OPTIONS = [
+    { value: 'hot', label: 'Hot', icon: Flame },
+    { value: 'new', label: 'New', icon: Clock },
+    { value: 'top', label: 'Top', icon: TrendingUp }
+] as const
 
+type View = 'posts' | 'comments'
 type Params = { username: string }
+
+const pill = (current: boolean) =>
+    cn(
+        'flex h-9 items-center gap-1.5 rounded-full px-3.5 text-sm transition-colors',
+        current
+            ? 'bg-card font-semibold text-foreground'
+            : 'font-medium text-muted-foreground hover:bg-accent hover:text-foreground'
+    )
 
 export async function generateMetadata({
     params
@@ -40,10 +56,11 @@ export default async function ProfilePage({
     searchParams
 }: {
     params: Promise<Params>
-    searchParams: Promise<{ sort?: string; cursor?: string }>
+    searchParams: Promise<{ sort?: string; cursor?: string; view?: string }>
 }) {
     const { username } = await params
-    const { sort, cursor } = await searchParams
+    const { sort, cursor, view: rawView } = await searchParams
+    const view: View = rawView === 'comments' ? 'comments' : 'posts'
     const active: Sort = SORTS.includes(sort as Sort) ? (sort as Sort) : 'new'
 
     const [viewer, profile] = await Promise.all([
@@ -53,14 +70,32 @@ export default async function ProfilePage({
 
     if (!profile) notFound()
 
-    const posts = await fetchFeed(
-        `/users/${encodeURIComponent(profile.username)}/posts`,
-        active,
-        cursor
-    )
+    const posts =
+        view === 'posts'
+            ? await fetchFeed(
+                `/users/${encodeURIComponent(profile.username)}/posts`,
+                active,
+                cursor
+            )
+            : null
+
+    const comments =
+        view === 'comments'
+            ? await serverApiOrNull<UserCommentPage>(
+                `/users/${encodeURIComponent(profile.username)}/comments${query({ sort: active, cursor })}`
+            )
+            : null
 
     const isMe = viewer?.username === profile.username
     const base = `/u/${profile.username}`
+    const keepView = view === 'comments' ? 'comments' : null
+
+    const sortHref = (value: Sort) =>
+        `${base}${query({ view: keepView, sort: value === 'new' ? null : value })}`
+    const moreHref = (nextCursor: string | null) =>
+        nextCursor
+            ? `${base}${query({ view: keepView, sort: active === 'new' ? null : active, cursor: nextCursor })}`
+            : null
 
     return (
         <SiteShell
@@ -137,23 +172,59 @@ export default async function ProfilePage({
                 </div>
             </Panel>
 
-            <SortBar basePath={base} active={active} defaultSort="new" />
+            <nav aria-label="Profile sections" className="mb-3 flex items-center gap-1">
+                <Link href={base} aria-current={view === 'posts' ? 'page' : undefined} className={pill(view === 'posts')}>
+                    <FileText className="size-4" aria-hidden="true" />
+                    Posts
+                </Link>
+                <Link
+                    href={`${base}?view=comments`}
+                    aria-current={view === 'comments' ? 'page' : undefined}
+                    className={pill(view === 'comments')}
+                >
+                    <MessageSquare className="size-4" aria-hidden="true" />
+                    Comments
+                </Link>
+            </nav>
 
-            <PostList
-                posts={posts.items}
-                moreHref={
-                    posts.nextCursor
-                        ? `${base}${query({ sort: active === 'new' ? null : active, cursor: posts.nextCursor })}`
-                        : null
-                }
-                emptyTitle="No posts"
-                emptyDescription={
-                    isMe
-                        ? 'You have not posted anything yet.'
-                        : `u/${profile.username} has not posted anything yet.`
-                }
-                emptyAction={isMe ? { href: '/submit', label: 'Create post' } : undefined}
-            />
+            <nav aria-label="Sort" className="mb-3 flex items-center gap-1">
+                {SORT_OPTIONS.map(({ value, label, icon: Icon }) => (
+                    <Link
+                        key={value}
+                        href={sortHref(value)}
+                        aria-current={value === active ? 'page' : undefined}
+                        className={pill(value === active)}
+                    >
+                        <Icon className="size-4" aria-hidden="true" />
+                        {label}
+                    </Link>
+                ))}
+            </nav>
+
+            {view === 'posts' ? (
+                <PostList
+                    posts={posts?.items ?? []}
+                    moreHref={moreHref(posts?.nextCursor ?? null)}
+                    emptyTitle="No posts"
+                    emptyDescription={
+                        isMe
+                            ? 'You have not posted anything yet.'
+                            : `u/${profile.username} has not posted anything yet.`
+                    }
+                    emptyAction={isMe ? { href: '/submit', label: 'Create post' } : undefined}
+                />
+            ) : (
+                <UserCommentList
+                    comments={comments?.items ?? []}
+                    moreHref={moreHref(comments?.nextCursor ?? null)}
+                    emptyTitle="No comments"
+                    emptyDescription={
+                        isMe
+                            ? 'You have not commented yet.'
+                            : `u/${profile.username} has not commented yet.`
+                    }
+                />
+            )}
         </SiteShell>
     )
 }

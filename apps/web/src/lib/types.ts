@@ -19,6 +19,18 @@ export type FeedPost = {
     userVote: VoteValue
 }
 
+export type UserComment = {
+    id: string
+    body: string
+    score: number
+    createdAt: string
+    editedAt: string | null
+    userVote: VoteValue
+    post: { id: string; title: string; subreddit: { name: string } }
+}
+
+export type UserCommentPage = { items: UserComment[]; nextCursor: string | null }
+
 export type PostDetail = FeedPost & { body: string | null; editedAt?: string | null }
 
 export type Feed = { items: FeedPost[]; nextCursor: string | null }
