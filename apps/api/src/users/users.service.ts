@@ -67,14 +67,14 @@ export class UsersService {
         )
     }
 
-    async listComments(username: string, query: ListPostsDto, viewerId: string) {
+    async listComments(username: string, query: ListPostsDto, viewerId?: string) {
       const user = await this.requireUser(username)
 
       const limit = query.limit ?? 25
       const orderBy: Prisma.CommentOrderByWithRelationInput[] =
         query.sort === 'top'
           ? [{ score: 'desc' }, { id: 'desc' }]
-          : [{ createdAt: 'desc' }, { deletedAt: null }]
+          : [{ createdAt: 'desc' }, { id: 'desc' }]
 
       const rows = await this.prisma.comment.findMany({
         where: { authorId: user.id, deletedAt: null},

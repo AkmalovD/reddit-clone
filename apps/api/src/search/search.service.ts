@@ -44,4 +44,61 @@ export class SearchService {
             userId
         )
     }
+
+    async searchCommunities(dto: SearchDto) {
+      const limit = dto.limit ?? 25
+      const offset = dto.offset ?? 0
+
+      const rows = await this.prisma.subreddit.findMany({
+        where: {
+          OR: [
+            { name: { contains: dto.q, mode: 'insensitive' } },
+            { description: { contains: dto.q, mode: 'insensitive' } }
+          ]
+        },
+        orderBy: [{ memberships: { _count: 'desc' } }, { id: 'desc' }],
+        take: limit + 1,
+        skip: offset,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          createdAt: true,
+          _count: { select: { memberships: true, posts: { where: { deletedAt: null } } } }
+        }
+      })
+
+      const hasMore = rows.length > limit
+      const items = hasMore ? rows.slice(0, limit) : rows
+
+      return { items, hasMore, nextOffset: hasMore ? offset + limit : null }
+    }
+
+    async searchUsers(dto: SearchDto) {
+      const limit = dto.limit ?? 25
+      const offset = dto.offset ?? 0
+
+      const rows = await this.prisma.user.findMany({
+        where: { username: { contains: dto.q, mode: 'insensitive' } },
+        orderBy: [{username: 'asc'}],
+        take: limit + 1,
+        skip: offset,
+        select: {
+          id: true,
+          username: true,
+          createdAt: true,
+          _count: {
+            select: {
+              posts: { where: { deletedAt: null } },
+              comments: { where: { deletedAt: null } }
+            }
+          }
+        }
+      })
+
+      const hasMore = rows.length > limit
+      const items = hasMore ? rows.slice(0, limit): rows
+
+      return { items, hasMore, nextOffset: hasMore ? offset + 1 : null }
+    }
 }

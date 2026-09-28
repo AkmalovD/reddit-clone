@@ -28,4 +28,22 @@ export class SearchController {
     searchPosts(@Query() dto: SearchDto, @CurrentUser() user: AuthUser | null) {
         return this.search.searchPosts(dto, user?.id)
     }
+
+    @Get('communities')
+    @RateLimit({ limit: 30, windowSeconds: 60 })
+    @ApiOperation({ summary: 'Поиск сообществ', description: 'По названию и описанию' })
+    @ApiResponse({ status: 200, description: '{ items, hasMore, nextOffset }' })
+    @ApiResponse({ status: 400, description: 'Запрос короче двух символов' })
+    searchCommunities(@Query() dto: SearchDto) {
+      return this.search.searchCommunities(dto)
+    }
+
+    @Get('users')
+    @RateLimit({ limit: 30, windowSeconds: 60 })
+    @ApiOperation({ summary: 'Поиск пользователей', description: 'По имени пользователя' })
+    @ApiResponse({ status: 200, description: '{ items, hasMore, nextOffset }' })
+    @ApiResponse({ status: 400, description: 'Запрос короче двух символов' })
+    searchUsers(@Query() dto: SearchDto) {
+      return this.search.searchUsers(dto)
+    }
 }
