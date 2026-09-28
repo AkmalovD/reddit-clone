@@ -41,6 +41,25 @@ export type SearchResults = {
     nextOffset: number | null
 }
 
+export type CommunitySearchResults = {
+    items: Subreddit[]
+    hasMore: boolean
+    nextOffset: number | null
+}
+
+export type UserSearchItem = {
+    id: string
+    username: string
+    createdAt: string
+    _count: { posts: number; comments: number }
+}
+
+export type UserSearchResults = {
+    items: UserSearchItem[]
+    hasMore: boolean
+    nextOffset: number | null
+}
+
 export type CommentNode = {
     id: string
     body: string
