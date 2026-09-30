@@ -16,7 +16,7 @@ export class SearchController {
     @Get('posts')
     @UseGuards(OptionalJwtAuthGuard)
     @ApiOptionalBearerAuth()
-    @RateLimit({ limit: 30, windowSeconds: 60 })
+    @RateLimit({ limit: 120, windowSeconds: 60 })
     @ApiOperation({
         summary: 'Поиск постов',
         description:
@@ -30,7 +30,7 @@ export class SearchController {
     }
 
     @Get('communities')
-    @RateLimit({ limit: 30, windowSeconds: 60 })
+    @RateLimit({ limit: 120, windowSeconds: 60 })
     @ApiOperation({ summary: 'Поиск сообществ', description: 'По названию и описанию' })
     @ApiResponse({ status: 200, description: '{ items, hasMore, nextOffset }' })
     @ApiResponse({ status: 400, description: 'Запрос короче двух символов' })
@@ -39,7 +39,7 @@ export class SearchController {
     }
 
     @Get('users')
-    @RateLimit({ limit: 30, windowSeconds: 60 })
+    @RateLimit({ limit: 120, windowSeconds: 60 })
     @ApiOperation({ summary: 'Поиск пользователей', description: 'По имени пользователя' })
     @ApiResponse({ status: 200, description: '{ items, hasMore, nextOffset }' })
     @ApiResponse({ status: 400, description: 'Запрос короче двух символов' })
