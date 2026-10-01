@@ -6,6 +6,7 @@ import { CreateSubredditDto } from "./dto/create-subreddit.dto";
 import { Prisma } from "../../generated/prisma/client";
 import { AddModeratorDto } from "./dto/add-moderator.dto";
 import { ListSubredditsDto } from "./dto/list-subreddits.dto";
+import { UpdateSubredditDto } from './dto/update-subreddit.dto';
 
 const SUBREDDIT_FIELDS = {
     id: true,
@@ -114,6 +115,36 @@ export class SubredditsService {
             joined: membership !== null,
             role: membership?.role ?? null
         }
+    }
+
+    async update(name: string, dto: UpdateSubredditDto, acrorId: string) {
+      const subreddit = await this.prisma.subreddit.findUnique({
+        where: { name: name.toLowerCase() },
+        select: {
+          id: true,
+          memberships: {
+            where: { userId: acrorId, role: { in: ['MODERATOR', 'OWNER'] } },
+            select: { role: true }
+          }
+        }
+      })
+
+      if (!subreddit) throw new NotFoundException('Subreddit not found')
+      if (subreddit.memberships.length === 0) {
+        throw new ForbiddenException('only moderators can edit the community')
+      }
+
+      const description = dto.description.trim()
+
+      const updated = await this.prisma.subreddit.update({
+        where: { id: subreddit.id },
+        data: { description: description.length > 0 ? description : null },
+        select: SUBREDDIT_FIELDS
+      })
+
+      await this.cache.delByPattern('subreddits')
+
+      return updated
     }
 
     async join(name: string, userId: string) {
