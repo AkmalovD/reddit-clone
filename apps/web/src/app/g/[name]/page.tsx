@@ -52,7 +52,12 @@ export default async function SubredditPage({
             banner={
                 <SubredditBanner subreddit={subreddit} signedIn={user !== null} />
             }
-            aside={<AboutCard subreddit={subreddit} />}
+            aside={
+                <AboutCard
+                    subreddit={subreddit}
+                    canEdit={subreddit.role === 'OWNER' || subreddit.role === 'MODERATOR'}
+                />
+            }
         >
             <SortBar basePath={base} active={active} />
             <PostList

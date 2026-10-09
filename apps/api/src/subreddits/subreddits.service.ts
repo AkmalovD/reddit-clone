@@ -142,7 +142,7 @@ export class SubredditsService {
         select: SUBREDDIT_FIELDS
       })
 
-      await this.cache.delByPattern('subreddits')
+      await this.cache.delByPattern('subreddits:*')
 
       return updated
     }

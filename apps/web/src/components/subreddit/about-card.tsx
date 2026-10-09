@@ -1,15 +1,11 @@
 import Link from 'next/link'
 import { Cake } from 'lucide-react'
 import { Panel, PanelHeading } from '@/components/common/panel'
+import { EditDescription } from '@/components/subreddit/edit-description'
 import { Button } from '@/components/ui/button'
 import { formatMonthYear, formatScore } from '@/lib/format'
 import type { Subreddit } from '@/lib/types'
 
-/**
- * Members and posts are the two numbers that decide whether a community is worth
- * joining, so they are set large and side by side rather than buried in a list of
- * icon rows where they read as trivia.
- */
 function Stat({ value, label }: { value: string; label: string }) {
     return (
         <div className="rounded-xl bg-muted px-3 py-2.5">
@@ -19,13 +15,23 @@ function Stat({ value, label }: { value: string; label: string }) {
     )
 }
 
-export function AboutCard({ subreddit }: { subreddit: Subreddit }) {
+export function AboutCard({
+    subreddit,
+    canEdit = false
+}: {
+    subreddit: Subreddit
+    canEdit?: boolean
+}) {
     return (
         <Panel className="p-4">
             <PanelHeading>About g/{subreddit.name}</PanelHeading>
 
-            {subreddit.description && (
-                <p className="mt-3 font-body text-sm/6">{subreddit.description}</p>
+            {canEdit ? (
+                <EditDescription name={subreddit.name} description={subreddit.description} />
+            ) : (
+                subreddit.description && (
+                    <p className="mt-3 font-body text-sm/6">{subreddit.description}</p>
+                )
             )}
 
             <dl className="mt-4 grid grid-cols-2 gap-2">

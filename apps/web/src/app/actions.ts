@@ -4,12 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { api, ApiError } from '@/lib/api'
-import { serverApi, serverApiOrNull } from '@/lib/server-api'
+import { serverApi } from '@/lib/server-api'
 import { clearSession, REFRESH_COOKIE } from '@/lib/session'
 import type {
     ActionFailure,
     ActionResult,
-    FeedPost,
     PostDetail,
     PostType,
     VoteResult,
@@ -95,6 +94,31 @@ export async function setMembership(name: string, joined: boolean): Promise<Acti
         return { ok: true }
     } catch (error) {
         return failure(error, 'That did not work.')
+    }
+}
+
+export async function updateSubreddit(name: string, description: string): Promise<ActionResult> {
+    if (description.trim().length > 500) {
+        return { ok: false, reason: 'invalid', message: 'Descriptions are up to 500 characters.' }
+    }
+
+    try {
+        await serverApi(`/subreddits/${encodeURIComponent(name)}`, {
+            method: 'PATCH',
+            body: { description }
+        })
+
+        revalidatePath(`/g/${name}`)
+
+        return { ok: true }
+    } catch (error) {
+        const result = failure(error, 'That description was rejected.')
+
+        if (!result.ok && result.reason === 'auth') {
+            return { ok: false, reason: 'auth', message: 'Only moderators can edit this community.' }
+        }
+
+        return result
     }
 }
 
