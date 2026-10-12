@@ -15,6 +15,7 @@ import { UploadsModule } from "./uploads/uploads.module";
 import { APP_GUARD } from "@nestjs/core";
 import { RateLimitGuard } from "./common/guards/rate-limit.guard";
 import { SavedModule } from './saved/saved.module';
+import { AiModule } from './ai/ai.module';
 
 
 @Module({
@@ -35,6 +36,7 @@ import { SavedModule } from './saved/saved.module';
     UsersModule,
     UploadsModule,
     SavedModule,
+    AiModule
   ],
   providers: [{ provide: APP_GUARD, useClass: RateLimitGuard }],
 })
