@@ -14,6 +14,7 @@ import type {
     VoteResult,
     VoteValue
 } from '@/lib/types'
+import {error} from "next/dist/build/output/log";
 
 const POST_PAGE = '/g/[name]/comments/[id]'
 
@@ -220,6 +221,35 @@ export async function uploadPostMedia(
         return { ok: true, ...res }
     } catch (error) {
         return failure(error, 'That file could not be uploaded.')
+    }
+}
+
+export async function improveText(
+    text: string
+): Promise<{ ok: true text: string } | ActionFailure> {
+    const trimmed = text.trim()
+
+    if (trimmed.length < 10 || trimmed.length > 5000) {
+        return {
+            ok: false,
+            reason: 'invalid',
+            message: 'The AI helper works with 10 to 5000 characters'
+        }
+    }
+
+    try {
+        const res = await serverApi<{ text: string }>('/ai/improve', {
+            method: 'POST',
+            body: { text: trimmed }
+        })
+
+        return { ok: true, text: res.text }
+    } catch (error) {
+        if (error instanceof ApiError && error.status === 503) {
+            return { ok: false, reason: 'error', message: 'The AI helper is busy. Try again later' }
+        }
+
+        return failure(error, 'That text could not be improved')
     }
 }
 

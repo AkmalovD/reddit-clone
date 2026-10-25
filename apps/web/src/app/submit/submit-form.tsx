@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { FileText, Image as ImageIcon, Link as LinkIcon, LoaderCircle, Video } from 'lucide-react'
 import { toast } from 'sonner'
-import { createPost, uploadPostMedia } from '@/app/actions'
+import {createPost, improveText, uploadPostMedia} from '@/app/actions'
 import { FieldError } from '@/components/feedback/field-error'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,6 +34,8 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
     const [uploading, setUploading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [pending, setPending] = useState(false)
+    const [imporving, setImproving] = useState(false)
+    const [original, setOriginal] = useState<string | null>(null)
 
     async function onFile(event: React.ChangeEvent<HTMLInputElement>) {
         const file = event.target.files?.[0]
@@ -55,6 +57,30 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
         }
 
         setMediaUrl(result.url)
+    }
+
+    async function improve() {
+        setError(null)
+        setImproving(true)
+
+        const result = await improveText(body)
+
+        setImproving(false)
+
+        if (!result.ok) {
+            setError(result.message)
+            return
+        }
+
+        setOriginal(body)
+        setBody(result.text)
+    }
+
+    function undoImprove() {
+        if (original === null) return
+
+        setBody(original)
+        setOriginal(null)
     }
 
     async function submit(event: React.FormEvent) {
@@ -153,13 +179,41 @@ export function SubmitForm({ defaultSubreddit }: { defaultSubreddit: string }) {
 
             {type === 'TEXT' && (
                 <div className="space-y-2">
-                    <Label htmlFor="body">Text</Label>
+                    <div className="flex items-center justify-between">
+                        <Label htmlFor="body">Text</Label>
+                        <div className="flex gap-1">
+                            {original !== null && (
+                                <Button type="button" variant="ghost" size="sm" onClick={undoImprove}>
+                                    <Undo2 aria-hidden="true" />
+                                    Undo
+                                </Button>
+                            )}
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={improve}
+                                disabled={improving || body.trim().length < 10}
+                            >
+                                {improving ? (
+                                    <LoaderCircle className="animate-spin" aria-hidden="true" />
+                                ) : (
+                                    <Sparkles aria-hidden="true" />
+                                )}
+                                {improving ? 'Improving' : 'Improve with AI'}
+                            </Button>
+                        </div>
+                    </div>
                     <Textarea
                         id="body"
                         name="body"
                         rows={8}
                         value={body}
-                        onChange={(event) => setBody(event.target.value)}
+                        onChange={(event) => {
+                            setBody(event.target.value)
+                            setOriginal(null)
+                        }}
+                        disabled={improving}
                         maxLength={BODY_MAX}
                         placeholder="What do you want to say?"
                         className="resize-y font-body"

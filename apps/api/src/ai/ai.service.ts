@@ -1,7 +1,7 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
-import { Env } from '../config/env.validation';
+import type { Env } from '../config/env.validation';
 
 const IMPROVE_INSTRUCTION = [
   'You are a writing assistant for a forum post editor.',
